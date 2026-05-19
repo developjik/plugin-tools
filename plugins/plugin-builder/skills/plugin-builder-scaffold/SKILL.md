@@ -8,7 +8,7 @@ description: Use when the plugin-builder orchestrator needs the internal rendere
 Internal sub-skill. Users should call `/plugin-builder:new`.
 
 Responsibilities:
-- Select the Claude Code and Codex adapters.
+- Select the Claude Code, Codex, and Cursor adapters.
 - Render files in a temporary stage directory.
 - Deduplicate shared files for hybrid output.
 - Promote the stage only after render succeeds.

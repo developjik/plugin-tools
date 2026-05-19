@@ -228,7 +228,10 @@ function renderHybrid(spec, out) {
 
       // Rewrite hooks file path to target-specific name under shared hooks/.
       if (f.path === 'hooks/hooks.json') {
-        outFile.path = t === 'claude-code' ? 'hooks/claude.json' : 'hooks/codex.json';
+        if (t === 'claude-code') outFile.path = 'hooks/claude.json';
+        else if (t === 'codex') outFile.path = 'hooks/codex.json';
+        else if (t === 'cursor') outFile.path = 'hooks/cursor.json';
+        else outFile.path = `hooks/${t}.json`;
       }
 
       // Rewrite manifest hooks field to point at the per-target file.
@@ -237,6 +240,9 @@ function renderHybrid(spec, out) {
       }
       if (f.path === '.codex-plugin/plugin.json') {
         outFile.content = rewriteManifestHooksField(f.content, './hooks/codex.json');
+      }
+      if (f.path === '.cursor-plugin/plugin.json') {
+        outFile.content = rewriteManifestHooksField(f.content, './hooks/cursor.json');
       }
 
       // README.md: Claude emits first; Codex overwrites with its variant (shared file).

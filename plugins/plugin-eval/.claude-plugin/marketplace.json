@@ -10,7 +10,7 @@
     {
       "name": "plugin-eval",
       "description": "Evaluate local skills and plugins with deterministic reports, token budget checks, and benchmark workflows.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "OpenAI Codex",
         "email": "support@openai.com",

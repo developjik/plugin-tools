@@ -171,12 +171,17 @@ class CodexAdapter extends PluginAdapter {
   #hooks(spec, warnings) {
     const claudeOnly = new Set(HOOK_COMPAT.claudeOnly);
     const codexOnly = new Set(HOOK_COMPAT.codexOnly);
+    const cursorOnly = new Set(HOOK_COMPAT.cursorOnly || []);
     const common = new Set(HOOK_COMPAT.common);
 
     const allowed = [];
     for (const h of spec.hooks || []) {
       if (claudeOnly.has(h.event)) {
         warnings.push(`hook event '${h.event}' is claude-only; dropped from codex target`);
+        continue;
+      }
+      if (cursorOnly.has(h.event)) {
+        warnings.push(`hook event '${h.event}' is cursor-only; dropped from codex target`);
         continue;
       }
       if (!common.has(h.event) && !codexOnly.has(h.event)) {

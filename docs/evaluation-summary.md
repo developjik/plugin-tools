@@ -4,6 +4,8 @@ Date: 2026-05-19
 
 This workspace was converted into a two-plugin management project and then evaluated with the local `plugin-eval` CLI from `plugins/plugin-eval`.
 
+Latest delta: `plugin-builder` extended with a Cursor target adapter (skills + hooks + mcp.json scope). UnifiedSpec `targets` enum accepts `cursor`. Test count 132 → 146 (14 new `adapter-cursor.test.js` cases). Both plugins remain 100/A, low risk.
+
 ## Commands
 
 ```bash

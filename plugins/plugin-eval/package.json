@@ -1,6 +1,6 @@
 {
   "name": "plugin-eval",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Local-first Codex plugin and CLI for evaluating Codex skills and plugins with a chat-first start flow for new authors.",

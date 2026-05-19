@@ -3,5 +3,13 @@
   "description": "Declarative hook event target compatibility. Validator reads this; adapters MUST NOT hardcode.",
   "common": ["PreToolUse", "PostToolUse", "Stop", "SessionStart", "UserPromptSubmit"],
   "claudeOnly": ["Notification", "SubagentStop", "PreCompact", "SessionEnd"],
-  "codexOnly": ["PermissionRequest"]
+  "codexOnly": ["PermissionRequest"],
+  "cursorSupported": ["PreToolUse", "PostToolUse", "SessionStart", "SessionEnd", "afterFileEdit", "beforeTabFileRead", "beforeShellExecution", "afterShellExecution"],
+  "cursorOnly": ["afterFileEdit", "beforeTabFileRead", "beforeShellExecution", "afterShellExecution"],
+  "claudeToCursor": {
+    "PreToolUse": "preToolUse",
+    "PostToolUse": "postToolUse",
+    "SessionStart": "sessionStart",
+    "SessionEnd": "sessionEnd"
+  }
 }

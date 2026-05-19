@@ -1,5 +1,5 @@
 ---
-description: Create a new Claude Code and OpenAI Codex plugin.
+description: Create a new Claude Code, OpenAI Codex, and Cursor plugin.
 argument-hint: "[name]"
 allowed-tools: ["AskUserQuestion", "Bash", "Read", "Write"]
 ---

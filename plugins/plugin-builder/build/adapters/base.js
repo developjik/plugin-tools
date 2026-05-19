@@ -5,6 +5,7 @@ const path = require('node:path');
 const MARKETPLACE_FILES = new Set([
   '.claude-plugin/marketplace.json',
   '.agents/plugins/marketplace.json',
+  '.cursor-plugin/marketplace.json',
 ]);
 
 class PluginAdapter {

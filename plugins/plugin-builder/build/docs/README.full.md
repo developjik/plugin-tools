@@ -4,7 +4,7 @@
 >
 > 한국어판: [README.ko.md](./README.ko.md)
 
-Version: 0.7.0 | License: MIT | Node: >=20 | Zero npm dependencies
+Version: 0.8.0 | License: MIT | Node: >=20 | Zero npm dependencies
 
 ---
 

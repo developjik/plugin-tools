@@ -132,6 +132,31 @@ function buildCodexRoot(opts = {}) {
   };
 }
 
+// Cursor marketplace plugin entry. Cursor marketplace schema:
+// { name, owner, plugins: [{ name, source, description }] } per cursor.com docs.
+function cursorEntry(spec, opts = {}) {
+  const entry = {
+    name: spec.name,
+    description: spec.description,
+  };
+  if (opts.gitRemote) {
+    entry.source = opts.gitRemote;
+  } else {
+    entry.source = opts.localPath || spec.name;
+  }
+  if (spec.version) entry.version = spec.version;
+  return entry;
+}
+
+// Cursor marketplace root template.
+function buildCursorRoot(opts = {}) {
+  return {
+    name: opts.name,
+    owner: normalizeOwner(opts.owner),
+    plugins: [],
+  };
+}
+
 module.exports = {
   CATEGORY_HINT,
   POLICY_DEFAULTS,
@@ -142,6 +167,8 @@ module.exports = {
   normalizeOwner,
   claudeEntry,
   codexEntry,
+  cursorEntry,
   buildClaudeRoot,
   buildCodexRoot,
+  buildCursorRoot,
 };

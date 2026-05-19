@@ -11,6 +11,7 @@ const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 const CLAUDE_MARKETPLACE_REL = '.claude-plugin/marketplace.json';
 const CODEX_MARKETPLACE_REL = '.agents/plugins/marketplace.json';
+const CURSOR_MARKETPLACE_REL = '.cursor-plugin/marketplace.json';
 
 function deepMerge(target, source) {
   for (const k of Object.keys(source)) {
@@ -129,6 +130,55 @@ async function patchCodex(marketplacePath, spec, opts = {}) {
   }
 }
 
+function buildCursorContent(marketplacePath, spec, opts) {
+  let data;
+  if (fs.existsSync(marketplacePath)) {
+    try {
+      data = JSON.parse(fs.readFileSync(marketplacePath, 'utf8'));
+    } catch (e) {
+      throw new Error(`cursor marketplace.json parse error: ${e.message}`);
+    }
+  } else {
+    data = me.buildCursorRoot({
+      name: opts.marketplaceName || `${spec.name}-marketplace`,
+      owner: spec.author,
+    });
+  }
+  if (!Array.isArray(data.plugins)) {
+    throw new Error('cursor marketplace.plugins[] must be an array');
+  }
+
+  const newEntry = me.cursorEntry(spec, opts);
+  const idx = data.plugins.findIndex(p => p && p.name === spec.name);
+  if (idx === -1) data.plugins.push(newEntry);
+  else data.plugins[idx] = deepMerge({ ...data.plugins[idx] }, newEntry);
+
+  const seen = new Set();
+  for (const p of data.plugins) {
+    if (seen.has(p.name)) throw new Error(`duplicate plugin in cursor marketplace: ${p.name}`);
+    seen.add(p.name);
+  }
+  return { data, action: idx === -1 ? 'append' : 'update', content: JSON.stringify(data, null, 2) + '\n' };
+}
+
+async function patchCursor(marketplacePath, spec, opts = {}) {
+  const release = await lockfile.acquire(marketplacePath, { retries: opts.retries ?? 3 });
+  try {
+    const built = buildCursorContent(marketplacePath, spec, opts);
+    let currentContent = '';
+    try {
+      if (fs.existsSync(marketplacePath)) currentContent = fs.readFileSync(marketplacePath, 'utf8');
+    } catch {}
+    if (currentContent === built.content) {
+      return { action: 'noop', name: spec.name };
+    }
+    atomicWrite(marketplacePath, built.content);
+    return { action: built.action, name: spec.name };
+  } finally {
+    release.release();
+  }
+}
+
 // Back-compat: v0.5 callers used `patch(<claude-marketplace>, spec, opts)`.
 async function patch(marketplacePath, spec, opts = {}) {
   return patchClaude(marketplacePath, spec, opts);
@@ -141,8 +191,13 @@ async function patch(marketplacePath, spec, opts = {}) {
 async function patchMarketplaceRoot(rootDir, spec, opts = {}) {
   const claudePath = path.join(rootDir, CLAUDE_MARKETPLACE_REL);
   const codexPath = path.join(rootDir, CODEX_MARKETPLACE_REL);
+  const cursorPath = path.join(rootDir, CURSOR_MARKETPLACE_REL);
 
-  // Both catalogs keep source.path relative to the marketplace root.
+  // Cursor catalog opt-in: only patched when spec.targets explicitly includes
+  // "cursor". Keeps existing 2-target call sites unchanged.
+  const cursorEnabled = Array.isArray(spec.targets) && spec.targets.includes('cursor');
+
+  // All catalogs keep source.path relative to the marketplace root.
   const codexOpts = { ...opts };
   if (!codexOpts.gitRemote && !codexOpts.codexLocalPath) {
     codexOpts.localPath = `./${spec.name}`;
@@ -151,17 +206,26 @@ async function patchMarketplaceRoot(rootDir, spec, opts = {}) {
   if (!claudeOpts.gitRemote) {
     claudeOpts.localPath = opts.localPath || `./${spec.name}`;
   }
+  const cursorOpts = { ...opts };
+  if (!cursorOpts.gitRemote) {
+    cursorOpts.localPath = opts.localPath || `./${spec.name}`;
+  }
 
-  // Build & validate both in memory (no IO yet beyond reads).
+  // Build & validate all in memory (no IO yet beyond reads).
   const claudeBuilt = buildClaudeContent(claudePath, spec, claudeOpts);
   const codexBuilt = buildCodexContent(codexPath, spec, codexOpts);
+  const cursorBuilt = cursorEnabled ? buildCursorContent(cursorPath, spec, cursorOpts) : null;
 
   const claudeBefore = fs.existsSync(claudePath) ? fs.readFileSync(claudePath, 'utf8') : '';
   const codexBefore = fs.existsSync(codexPath) ? fs.readFileSync(codexPath, 'utf8') : '';
+  const cursorBefore = cursorEnabled && fs.existsSync(cursorPath) ? fs.readFileSync(cursorPath, 'utf8') : '';
   const claudeNoop = claudeBefore === claudeBuilt.content;
   const codexNoop = codexBefore === codexBuilt.content;
-  if (claudeNoop && codexNoop) {
-    return { action: 'noop', name: spec.name, claude: { action: 'noop' }, codex: { action: 'noop' } };
+  const cursorNoop = !cursorEnabled || cursorBefore === cursorBuilt.content;
+  if (claudeNoop && codexNoop && cursorNoop) {
+    const noopResult = { action: 'noop', name: spec.name, claude: { action: 'noop' }, codex: { action: 'noop' } };
+    if (cursorEnabled) noopResult.cursor = { action: 'noop' };
+    return noopResult;
   }
 
   let claudeResult = { action: 'noop' };
@@ -195,17 +259,43 @@ async function patchMarketplaceRoot(rootDir, spec, opts = {}) {
     release.release();
   }
 
-  return { action: 'append', name: spec.name, claude: claudeResult, codex: codexResult };
+  let cursorResult = { action: 'noop' };
+  if (cursorEnabled && !cursorNoop) {
+    fs.mkdirSync(path.dirname(cursorPath), { recursive: true });
+    const release = await lockfile.acquire(cursorPath, { retries: opts.retries ?? 3 });
+    try {
+      atomicWrite(cursorPath, cursorBuilt.content);
+      cursorResult = { action: cursorBuilt.action };
+    } catch (e) {
+      try { release.release(); } catch {}
+      // Rollback Claude + Codex on cursor write failure.
+      await rollbackClaude(claudePath, claudeBefore, opts);
+      await rollbackPath(codexPath, codexBefore, opts);
+      const err = new Error(`cursor marketplace write failed: ${e.message}`);
+      err.code = 'ECURSOR_WRITE';
+      err.cause = e;
+      throw err;
+    }
+    release.release();
+  }
+
+  const result = { action: 'append', name: spec.name, claude: claudeResult, codex: codexResult };
+  if (cursorEnabled) result.cursor = cursorResult;
+  return result;
 }
 
 async function rollbackClaude(claudePath, claudeBefore, opts) {
-  fs.mkdirSync(path.dirname(claudePath), { recursive: true });
-  const release = await lockfile.acquire(claudePath, { retries: opts.retries ?? 3 });
+  return rollbackPath(claudePath, claudeBefore, opts);
+}
+
+async function rollbackPath(targetPath, prevContent, opts) {
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+  const release = await lockfile.acquire(targetPath, { retries: opts.retries ?? 3 });
   try {
-    if (claudeBefore === '') {
-      try { fs.unlinkSync(claudePath); } catch {}
+    if (prevContent === '') {
+      try { fs.unlinkSync(targetPath); } catch {}
     } else {
-      atomicWrite(claudePath, claudeBefore);
+      atomicWrite(targetPath, prevContent);
     }
   } finally {
     release.release();
@@ -281,6 +371,7 @@ module.exports = {
   patch,
   patchClaude,
   patchCodex,
+  patchCursor,
   patchMarketplaceRoot,
   defaultEntry,
   deepMerge,
@@ -288,4 +379,5 @@ module.exports = {
   detectStaleInPluginMarketplace,
   CLAUDE_MARKETPLACE_REL,
   CODEX_MARKETPLACE_REL,
+  CURSOR_MARKETPLACE_REL,
 };

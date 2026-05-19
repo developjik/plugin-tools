@@ -1,6 +1,6 @@
 # plugin-builder
 
-Plugin Builder scaffolds Claude Code and OpenAI Codex plugins from one UnifiedSpec.
+Plugin Builder scaffolds Claude Code, OpenAI Codex, and Cursor plugins from one UnifiedSpec.
 
 ## Use
 
@@ -14,7 +14,12 @@ Install the marketplace, then ask naturally to create, validate, publish, or ini
 # Codex
 codex plugin marketplace add github:developjik/plugin-tools
 codex plugin install plugin-builder
+
+# Cursor (generated plugins install via Cursor Agent chat)
+/add-plugin <plugin-name>
 ```
+
+Cursor target scope (v1): emits `skills`, `hooks`, and `mcp.json` only. `agents`, `commands`, and Cursor `rules` are not emitted. Hook event names are normalised to Cursor camelCase (e.g. `PreToolUse` → `preToolUse`).
 
 User-facing commands:
 
@@ -47,7 +52,7 @@ node /Users/developjik/.codex/plugins/cache/openai-curated/plugin-eval/eed16198/
 
 Expected current result:
 
-- Tests: 132/132 pass
+- Tests: 146/146 pass
 - Plugin Eval: 100/100, Grade A, low risk
 - Skills: all four bundled skills score 100/100
 

@@ -7,7 +7,7 @@ The canonical `plugin-eval` result is JSON with this top-level shape:
   "schemaVersion": 1,
   "tool": {
     "name": "plugin-eval",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "createdAt": "2026-04-07T00:00:00.000Z",
   "target": {

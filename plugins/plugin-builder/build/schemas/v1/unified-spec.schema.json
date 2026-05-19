@@ -42,8 +42,16 @@
     },
     "targets": {
       "type": "array",
-      "items": { "enum": ["claude-code","codex"] },
+      "items": { "enum": ["claude-code","codex","cursor"] },
       "minItems": 1
+    },
+    "cursor": {
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" },
+        "keywords": { "type": "array", "items": { "type": "string" } },
+        "logo": { "type": "string" }
+      }
     },
     "commands": { "type": "array", "items": { "$ref": "#/$defs/CommandSpec" } },
     "skills": { "type": "array", "items": { "$ref": "#/$defs/SkillSpec" } },

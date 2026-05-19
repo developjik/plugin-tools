@@ -1,6 +1,6 @@
 {
   "name": "plugin-eval",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Evaluate local Codex skills and plugins.",
   "author": {
     "name": "OpenAI Codex",

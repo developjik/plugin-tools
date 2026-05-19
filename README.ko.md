@@ -4,8 +4,10 @@
 
 | 플러그인 | 역할 |
 |---|---|
-| `plugins/plugin-builder` | UnifiedSpec 하나로 Claude Code와 Codex 플러그인을 생성, 검증, 등록합니다. |
+| `plugins/plugin-builder` | UnifiedSpec 하나로 Claude Code, Codex, Cursor 플러그인을 생성, 검증, 등록합니다. |
 | `plugins/plugin-eval` | 로컬 스킬과 플러그인을 평가하고 점수, 개선 우선순위, 후속 검증 흐름을 제공합니다. |
+
+`plugin-builder` 지원 타겟 (UnifiedSpec `targets[]`): `claude-code`, `codex`, `cursor`. Cursor v1 범위는 skills, hooks, `mcp.json` 만 출력합니다. 상세 규약은 `plugins/plugin-builder/build/docs/SPEC-cursor.md`.
 
 핵심 경계는 단순합니다. `plugin-builder`는 만들고, `plugin-eval`은 평가합니다. 두 기능은 같은 제작 생애주기에 있지만 배포 단위와 스킬 네임스페이스는 분리합니다.
 

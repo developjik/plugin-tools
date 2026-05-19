@@ -44,7 +44,7 @@ function isSafeUri(s) {
 // Hint-only — v0.6 passes raw through. Marketplace writer applies hint mapping
 // per target. Unknown values surface as scaffold warnings, never errors.
 const CATEGORIES = ['productivity', 'dev-tools', 'ai', 'data', 'other'];
-const TARGETS = ['claude-code', 'codex'];
+const TARGETS = ['claude-code', 'codex', 'cursor'];
 const TRANSPORTS = ['stdio', 'http', 'sse'];
 
 // Runtime sanity check — adapters and IR both rely on these keys.
@@ -171,7 +171,8 @@ function validateHook(h, p, errs, warnings) {
   if (h.event && typeof h.event === 'string' && warnings) {
     const known = HOOK_COMPAT.common.includes(h.event)
       || HOOK_COMPAT.claudeOnly.includes(h.event)
-      || HOOK_COMPAT.codexOnly.includes(h.event);
+      || HOOK_COMPAT.codexOnly.includes(h.event)
+      || (HOOK_COMPAT.cursorOnly || []).includes(h.event);
     if (!known) warnings.push(`${p}.event: '${h.event}' not in HookEventCompat table; will emit with warning`);
   }
 }
@@ -222,6 +223,7 @@ function normalize(spec) {
     interface: spec.interface || null,
     claude: spec.claude || null,
     codex: spec.codex || null,
+    cursor: spec.cursor || null,
   };
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "plugin-builder",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Meta plugin that scaffolds Claude Code + OpenAI Codex plugins from a single UnifiedSpec.",
   "type": "commonjs",
   "engines": {

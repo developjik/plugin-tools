@@ -8,7 +8,7 @@ description: Use when the plugin-builder orchestrator needs the internal marketp
 Internal sub-skill. Users should call `/plugin-builder:publish`.
 
 Responsibilities:
-- Patch Claude and Codex marketplace catalogs.
+- Patch Claude, Codex, and (when targets include `cursor`) Cursor marketplace catalogs.
 - Serialize writes with the file lock.
 - Preserve unknown fields while rejecting unsafe merge keys.
-- Report append, update, or noop.
+- Report append, update, or noop per catalog.

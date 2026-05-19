@@ -145,9 +145,11 @@ function stageF(pluginDir) {
 
   const claudeMp = path.join(marketplaceRoot, '.claude-plugin', 'marketplace.json');
   const codexMp = path.join(marketplaceRoot, '.agents', 'plugins', 'marketplace.json');
+  const cursorMp = path.join(marketplaceRoot, '.cursor-plugin', 'marketplace.json');
   const paths = [];
   if (fs.existsSync(claudeMp)) paths.push(['Claude', claudeMp, validateClaudeMarketplace]);
   if (fs.existsSync(codexMp)) paths.push(['Codex', codexMp, validateCodexMarketplace]);
+  if (fs.existsSync(cursorMp)) paths.push(['Cursor', cursorMp, validateCursorMarketplace]);
   if (paths.length === 0) return { stage: 'f', name: 'Marketplace', status: 'SKIP', reason: 'no marketplace.json' };
 
   const errors = [];
@@ -164,7 +166,8 @@ function findMarketplaceRoot(pluginDir) {
   for (const dir of candidates) {
     if (
       fs.existsSync(path.join(dir, '.claude-plugin', 'marketplace.json')) ||
-      fs.existsSync(path.join(dir, '.agents', 'plugins', 'marketplace.json'))
+      fs.existsSync(path.join(dir, '.agents', 'plugins', 'marketplace.json')) ||
+      fs.existsSync(path.join(dir, '.cursor-plugin', 'marketplace.json'))
     ) {
       return dir;
     }
@@ -183,6 +186,23 @@ function readMarketplace(mp) {
 }
 
 function validateClaudeMarketplace(mp) {
+  const r = readMarketplace(mp);
+  if (r.error) return r.error;
+  const data = r.data;
+  if (!data.name) return 'marketplace.name required';
+  if (!data.owner) return 'marketplace.owner required';
+  if (!Array.isArray(data.plugins)) return 'marketplace.plugins[] required';
+  const seen = new Set();
+  for (const p of data.plugins) {
+    if (!p.name) return 'plugin entry missing name';
+    if (seen.has(p.name)) return `duplicate plugin: ${p.name}`;
+    seen.add(p.name);
+    if (!p.source && !p.path) return `plugin ${p.name}: source or path required`;
+  }
+  return null;
+}
+
+function validateCursorMarketplace(mp) {
   const r = readMarketplace(mp);
   if (r.error) return r.error;
   const data = r.data;

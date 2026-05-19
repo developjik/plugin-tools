@@ -123,12 +123,17 @@ class ClaudeCodeAdapter extends PluginAdapter {
   #hooks(spec, warnings) {
     const claudeOnly = new Set(HOOK_COMPAT.claudeOnly);
     const codexOnly = new Set(HOOK_COMPAT.codexOnly);
+    const cursorOnly = new Set(HOOK_COMPAT.cursorOnly || []);
     const common = new Set(HOOK_COMPAT.common);
 
     const allowed = [];
     for (const h of spec.hooks || []) {
       if (codexOnly.has(h.event)) {
         warnings.push(`hook event '${h.event}' is codex-only; dropped from claude-code target`);
+        continue;
+      }
+      if (cursorOnly.has(h.event)) {
+        warnings.push(`hook event '${h.event}' is cursor-only; dropped from claude-code target`);
         continue;
       }
       if (!common.has(h.event) && !claudeOnly.has(h.event)) {

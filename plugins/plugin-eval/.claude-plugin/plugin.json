@@ -1,7 +1,7 @@
 {
   "name": "plugin-eval",
   "displayName": "Plugin Eval",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Evaluate local Codex and Claude Code skills/plugins from chat, then route to deterministic local reports, token budget checks, and benchmark workflows.",
   "author": {
     "name": "OpenAI Codex",

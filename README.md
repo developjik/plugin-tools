@@ -1,13 +1,15 @@
 # Plugin Tools
 
-This workspace manages two independent dual-platform plugins:
+This workspace manages two independent multi-platform plugins:
 
 | Plugin | Purpose |
 |---|---|
-| `plugins/plugin-builder` | Scaffold, validate, and publish Claude Code plus Codex plugins from one UnifiedSpec. |
+| `plugins/plugin-builder` | Scaffold, validate, and publish Claude Code, Codex, and Cursor plugins from one UnifiedSpec. |
 | `plugins/plugin-eval` | Evaluate local skills and plugins, explain scores, and guide improvement work. |
 
 The project keeps build and evaluation as separate plugin surfaces. `plugin-builder` creates and validates plugin bundles; `plugin-eval` reviews those bundles and their skills.
+
+`plugin-builder` targets (UnifiedSpec `targets[]`): `claude-code`, `codex`, `cursor`. Cursor v1 scope emits skills, hooks, and `mcp.json` only — see `plugins/plugin-builder/build/docs/SPEC-cursor.md`.
 
 ## Layout
 
@@ -56,6 +58,7 @@ The root marketplace catalogs expose both plugins from this workspace:
 
 - Codex: `.agents/plugins/marketplace.json`
 - Claude Code: `.claude-plugin/marketplace.json`
+- Cursor: `.cursor-plugin/marketplace.json` (created on scaffold when a spec lists `cursor` in `targets`)
 
 Each plugin also keeps its own internal manifests and local marketplace metadata so it can still be developed, validated, or packaged independently.
 

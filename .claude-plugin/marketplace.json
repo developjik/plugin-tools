@@ -1,5 +1,5 @@
 {
-  "name": "plugin-tools-local",
+  "name": "plugin-tools",
   "owner": {
     "name": "developjik"
   },
@@ -10,15 +10,15 @@
     {
       "name": "plugin-builder",
       "source": "./plugins/plugin-builder",
-      "version": "0.7.0",
-      "description": "Scaffold Claude Code + OpenAI Codex plugins from a single UnifiedSpec.",
+      "version": "0.8.0",
+      "description": "Scaffold Claude Code, OpenAI Codex, and Cursor plugins from a single UnifiedSpec.",
       "category": "dev-tools",
       "license": "MIT"
     },
     {
       "name": "plugin-eval",
       "source": "./plugins/plugin-eval",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Evaluate local skills and plugins with deterministic reports, token budget checks, and benchmark workflows.",
       "category": "Coding",
       "license": "MIT"
