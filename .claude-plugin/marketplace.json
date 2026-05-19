@@ -1,0 +1,27 @@
+{
+  "name": "plugin-tools-local",
+  "owner": {
+    "name": "developjik"
+  },
+  "metadata": {
+    "description": "Local marketplace for Plugin Builder and Plugin Eval."
+  },
+  "plugins": [
+    {
+      "name": "plugin-builder",
+      "source": "./plugins/plugin-builder",
+      "version": "0.7.0",
+      "description": "Scaffold Claude Code + OpenAI Codex plugins from a single UnifiedSpec.",
+      "category": "dev-tools",
+      "license": "MIT"
+    },
+    {
+      "name": "plugin-eval",
+      "source": "./plugins/plugin-eval",
+      "version": "0.1.0",
+      "description": "Evaluate local skills and plugins with deterministic reports, token budget checks, and benchmark workflows.",
+      "category": "Coding",
+      "license": "MIT"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+*.analysis.json
+*.report.html
+*.report.md
+.DS_Store
+.tmp/
+node_modules/
+.plugin-eval/
+*.log
+*.tmp
+__pycache__/

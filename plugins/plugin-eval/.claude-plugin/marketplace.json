@@ -1,0 +1,35 @@
+{
+  "name": "local-plugin-eval",
+  "owner": {
+    "name": "developjik"
+  },
+  "metadata": {
+    "description": "Local marketplace for the dual-platform Plugin Eval bundle."
+  },
+  "plugins": [
+    {
+      "name": "plugin-eval",
+      "description": "Evaluate local skills and plugins with deterministic reports, token budget checks, and benchmark workflows.",
+      "version": "0.1.0",
+      "author": {
+        "name": "OpenAI Codex",
+        "email": "support@openai.com",
+        "url": "https://openai.com/"
+      },
+      "homepage": "https://github.com/openai/plugins/tree/main/plugins/plugin-eval",
+      "repository": "https://github.com/openai/plugins",
+      "license": "MIT",
+      "keywords": [
+        "codex",
+        "claude-code",
+        "plugin",
+        "skill",
+        "evaluation",
+        "quality",
+        "budget"
+      ],
+      "category": "Coding",
+      "source": "./"
+    }
+  ]
+}

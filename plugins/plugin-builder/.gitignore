@@ -1,0 +1,11 @@
+.DS_Store
+
+# plugin-eval outputs and local artifacts
+.plugin-eval/runs/
+*.analysis.json
+*.report.md
+*.report.html
+*.log
+*.tmp
+.tmp/
+build/plugin-eval/

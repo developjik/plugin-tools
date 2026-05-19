@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plugin-builder/schemas/v1/marketplace-codex.schema.json",
+  "title": "Codex marketplace.json",
+  "type": "object",
+  "required": ["name", "plugins"],
+  "properties": {
+    "name": { "type": "string" },
+    "interface": {
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" }
+      }
+    },
+    "plugins": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/CodexEntry" }
+    }
+  },
+  "$defs": {
+    "CodexEntry": {
+      "type": "object",
+      "required": ["name", "source", "policy", "category"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$" },
+        "version": { "type": "string" },
+        "description": { "type": "string", "maxLength": 200 },
+        "source": {
+          "type": "object",
+          "required": ["source"],
+          "properties": {
+            "source": { "type": "string", "enum": ["local", "github"] },
+            "path": { "type": "string" },
+            "repo": { "type": "string" }
+          }
+        },
+        "policy": {
+          "type": "object",
+          "required": ["installation", "authentication"],
+          "properties": {
+            "installation": { "type": "string", "enum": ["AVAILABLE", "INSTALLED_BY_DEFAULT", "NOT_AVAILABLE"] },
+            "authentication": { "type": "string" }
+          }
+        },
+        "category": { "type": "string" },
+        "author": { "type": ["object", "string"] },
+        "license": { "type": "string" },
+        "homepage": { "type": "string" },
+        "repository": { "type": "string" }
+      }
+    }
+  }
+}

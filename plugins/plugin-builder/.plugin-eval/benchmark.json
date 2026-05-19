@@ -1,0 +1,58 @@
+{
+  "kind": "plugin-eval-benchmark",
+  "schemaVersion": 2,
+  "version": 2,
+  "targetKind": "plugin",
+  "targetName": "plugin-builder",
+  "runner": {
+    "type": "codex-cli",
+    "model": "gpt-5.4",
+    "sandbox": "workspace-write",
+    "approvalPolicy": "never",
+    "extraArgs": []
+  },
+  "workspace": {
+    "sourcePath": "/Users/developjik/Library/Mobile Documents/com~apple~CloudDocs/02_Personal/plugin-builder/build/benchmark-workspace",
+    "setupMode": "copy",
+    "preserve": "on-failure"
+  },
+  "targetProvisioning": {
+    "mode": "workspace-plugin-marketplace"
+  },
+  "verifiers": {
+    "commands": [
+      "test -f tmp-marketplace/.claude-plugin/marketplace.json && test -f tmp-marketplace/.agents/plugins/marketplace.json",
+      "test -f tmp-marketplace/bench-i18n-guard/.claude-plugin/plugin.json && test -f tmp-marketplace/bench-i18n-guard/.codex-plugin/plugin.json",
+      "node -e \"const fs=require('fs'); const c=JSON.parse(fs.readFileSync('tmp-marketplace/.agents/plugins/marketplace.json','utf8')); const matches=c.plugins.filter(p=>p.name==='bench-i18n-guard'); if(matches.length!==1) process.exit(1); if(matches[0].source.path!=='./bench-i18n-guard') process.exit(1);\"",
+      "test ! -d tmp-marketplace/Bench_I18n_Guard"
+    ]
+  },
+  "notes": [
+    "Canonical Plugin Eval benchmark config for plugin-builder.",
+    "Scenarios focus on the real marketplace init, scaffold, validate, publish, and invalid-spec boundary workflows.",
+    "Benchmark means real codex exec runs. There is no simulated dry-run mode.",
+    "Observed usage is whole-session Codex cost, not static plugin active budget. See .plugin-eval/MEASUREMENT.md."
+  ],
+  "setupQuestions": [
+    "What are the 3 highest-value real tasks this plugin should help complete inside a workspace?",
+    "Which scenario is the must-pass end-to-end task for this plugin?",
+    "What output should exist on disk if the scenario succeeds?",
+    "Which verification command would tell you the result is actually usable?",
+    "What boundary case should this plugin narrow, refuse, or hand off instead of overreaching on?"
+  ],
+  "scenarios": [
+    {
+      "id": "marketplace-lifecycle-smoke",
+      "title": "Marketplace lifecycle smoke",
+      "purpose": "Measure the core plugin-builder workflow in one independent run: initialize catalogs, scaffold, validate, publish idempotently, and handle one invalid-spec boundary.",
+      "userInput": "Use the local Codex plugin \"plugin-builder\" if it helps. Work only inside ./tmp-marketplace. Initialize both Claude and Codex catalogs there, scaffold a minimal plugin named \"bench-i18n-guard\", validate it, publish it twice to verify idempotency, then try one invalid UnifiedSpec with a non-kebab-case name and explain why it is refused. The provisioned plugin code is available at ./plugins/plugin-builder; use its local CLI with node ./plugins/plugin-builder/bin/plugin-builder when you need deterministic execution. Report the paths plus validation results.",
+      "successChecklist": [
+        "The run initializes both Claude and Codex marketplace catalogs.",
+        "The generated plugin lives at <root>/bench-i18n-guard.",
+        "The validator result is PASS or explains only environment-dependent SKIP stages.",
+        "The second publish does not duplicate the plugin entry.",
+        "The invalid spec is refused without leaving a partial plugin tree."
+      ]
+    }
+  ]
+}

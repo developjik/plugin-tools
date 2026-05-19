@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plugin-builder/schemas/v1/marketplace-claude.schema.json",
+  "title": "Claude Code marketplace.json",
+  "type": "object",
+  "required": ["name", "owner", "plugins"],
+  "properties": {
+    "name": { "type": "string" },
+    "owner": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "url": { "type": "string" }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "pluginRoot": { "type": "string" }
+      }
+    },
+    "plugins": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ClaudeEntry" }
+    }
+  },
+  "$defs": {
+    "ClaudeEntry": {
+      "type": "object",
+      "required": ["name", "version", "description"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$" },
+        "version": { "type": "string" },
+        "description": { "type": "string", "maxLength": 200 },
+        "source": { "type": "string", "enum": ["local", "github"] },
+        "path": { "type": "string" },
+        "repo": { "type": "string" },
+        "author": { "type": ["object", "string"] },
+        "license": { "type": "string" },
+        "category": { "type": "string" },
+        "homepage": { "type": "string" },
+        "repository": { "type": "string" }
+      }
+    }
+  }
+}

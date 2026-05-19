@@ -1,0 +1,29 @@
+{
+  "name": "plugin-builder-official",
+  "interface": {
+    "displayName": "Plugin Builder Official"
+  },
+  "plugins": [
+    {
+      "name": "plugin-builder",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "version": "0.7.0",
+      "description": "Scaffold Claude Code + OpenAI Codex plugins from a single UnifiedSpec.",
+      "author": {
+        "name": "developjik",
+        "email": "developjik@colosseum.kr"
+      },
+      "license": "MIT",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "DevTools",
+      "homepage": "https://github.com/developjik/plugin-builder",
+      "repository": "https://github.com/developjik/plugin-builder"
+    }
+  ]
+}

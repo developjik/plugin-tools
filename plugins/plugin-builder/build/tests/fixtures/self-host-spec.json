@@ -1,0 +1,29 @@
+{
+  "specVersion": "1.0",
+  "name": "plugin-builder",
+  "version": "0.7.0",
+  "description": "Scaffold Claude Code + OpenAI Codex plugins from a single UnifiedSpec.",
+  "author": { "name": "developjik", "email": "developjik@colosseum.kr" },
+  "license": "MIT",
+  "category": "dev-tools",
+  "homepage": "https://github.com/developjik/plugin-builder",
+  "repository": "https://github.com/developjik/plugin-builder",
+  "targets": ["claude-code", "codex"],
+  "displayName": "Plugin Builder",
+  "defaultPrompt": [
+    "Scaffold a new plugin for both Claude Code and Codex",
+    "Validate an existing plugin directory"
+  ],
+  "commands": [
+    { "name": "new", "description": "Scaffold a new Claude Code + OpenAI Codex plugin from scratch", "argsHint": "[name]", "body": "Invoke the plugin-builder skill." },
+    { "name": "validate", "description": "Run 6-stage validation on a plugin directory", "argsHint": "<plugin-dir>", "body": "Run bin/plugin-builder validate $1." },
+    { "name": "publish", "description": "Patch a marketplace.json entry for a plugin", "argsHint": "<plugin-dir>", "body": "Run bin/plugin-builder publish $1." },
+    { "name": "marketplace-init", "description": "Create Claude and Codex marketplace catalogs for a new marketplace root", "argsHint": "<root>", "body": "Run bin/plugin-builder marketplace init $ARGUMENTS." }
+  ],
+  "skills": [
+    { "name": "plugin-builder", "description": "Orchestrator. Drives scaffold-validate-publish pipeline for cross-target plugin generation.", "body": "# plugin-builder\nOrchestrator skill." },
+    { "name": "plugin-builder-scaffold", "description": "Render a validated UnifiedSpec into Claude Code and/or Codex file trees with staged atomic writes.", "body": "# scaffold\nRender step." },
+    { "name": "plugin-builder-validate", "description": "Run the 6-stage validator against a rendered plugin directory. SKIP semantics for missing CLIs.", "body": "# validate\nValidator step." },
+    { "name": "plugin-builder-marketplace", "description": "Idempotently patch marketplace.json under a file lock with atomic write and deep-merge.", "body": "# marketplace\nMarketplace patcher." }
+  ]
+}

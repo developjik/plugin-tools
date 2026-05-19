@@ -1,0 +1,17 @@
+{
+  "name": "plugin-builder-official",
+  "owner": { "name": "developjik", "email": "developjik@colosseum.kr" },
+  "metadata": {
+    "description": "Marketplace for the Plugin Builder dual-target plugin scaffold."
+  },
+  "plugins": [
+    {
+      "name": "plugin-builder",
+      "source": "./",
+      "version": "0.7.0",
+      "description": "Scaffold Claude Code + OpenAI Codex plugins from a single UnifiedSpec.",
+      "category": "dev-tools",
+      "license": "MIT"
+    }
+  ]
+}

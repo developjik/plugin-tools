@@ -1,0 +1,12 @@
+{
+  "name": "plugin-builder",
+  "version": "0.7.0",
+  "description": "Scaffold Claude Code + OpenAI Codex plugins from a single UnifiedSpec.",
+  "author": { "name": "developjik", "email": "developjik@colosseum.kr" },
+  "license": "MIT",
+  "category": "dev-tools",
+  "homepage": "https://github.com/developjik/plugin-builder",
+  "repository": "https://github.com/developjik/plugin-builder",
+  "commands": "./commands/",
+  "skills": "./skills/"
+}

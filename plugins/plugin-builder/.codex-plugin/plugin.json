@@ -1,0 +1,32 @@
+{
+  "name": "plugin-builder",
+  "version": "0.7.0",
+  "description": "Scaffold Claude Code + OpenAI Codex plugins from a single UnifiedSpec.",
+  "author": { "name": "developjik", "email": "developjik@colosseum.kr" },
+  "license": "MIT",
+  "category": "dev-tools",
+  "keywords": ["plugin-builder", "codex", "claude-code", "scaffold", "marketplace"],
+  "homepage": "https://github.com/developjik/plugin-builder",
+  "repository": "https://github.com/developjik/plugin-builder",
+  "skills": "./skills/",
+  "features": { "plugin_hooks": false },
+  "interface": {
+    "displayName": "Plugin Builder",
+    "shortDescription": "Scaffold and validate Claude Code plus Codex plugins from one spec.",
+    "longDescription": "Plugin Builder creates dual-target Claude Code and OpenAI Codex plugin trees from a single UnifiedSpec, validates generated plugins, and patches marketplace catalogs.",
+    "developerName": "developjik",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Create hybrid Claude Code and Codex plugin scaffolds",
+      "Validate manifests, file structure, cross-references, dry-runs, and marketplace catalogs",
+      "Publish plugin entries to Claude and Codex marketplace catalogs"
+    ],
+    "websiteURL": "https://github.com/developjik/plugin-builder",
+    "privacyPolicyURL": "https://github.com/developjik/plugin-builder",
+    "termsOfServiceURL": "https://github.com/developjik/plugin-builder",
+    "defaultPrompt": [
+      "Scaffold a new plugin for both Claude Code and Codex",
+      "Validate an existing plugin directory"
+    ]
+  }
+}

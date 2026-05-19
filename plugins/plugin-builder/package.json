@@ -1,0 +1,20 @@
+{
+  "name": "plugin-builder",
+  "version": "0.7.0",
+  "description": "Meta plugin that scaffolds Claude Code + OpenAI Codex plugins from a single UnifiedSpec.",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "plugin-builder": "./bin/plugin-builder"
+  },
+  "scripts": {
+    "test": "node --test build/tests/*.test.js",
+    "lint": "node --check bin/plugin-builder && find build/core build/adapters -name '*.js' -exec node --check {} \\;"
+  },
+  "license": "MIT",
+  "author": "developjik <developjik@colosseum.kr>",
+  "dependencies": {},
+  "devDependencies": {}
+}

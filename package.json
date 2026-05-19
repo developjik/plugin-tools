@@ -1,0 +1,24 @@
+{
+  "name": "plugin-tools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Workspace for building and evaluating dual-platform Codex and Claude Code plugins.",
+  "workspaces": [
+    "plugins/plugin-builder",
+    "plugins/plugin-eval"
+  ],
+  "scripts": {
+    "test": "npm run test:builder && npm run test:eval",
+    "test:builder": "npm --prefix plugins/plugin-builder test",
+    "test:eval": "npm --prefix plugins/plugin-eval test",
+    "lint": "npm run lint:builder",
+    "lint:builder": "npm --prefix plugins/plugin-builder run lint",
+    "eval:builder": "node plugins/plugin-eval/scripts/plugin-eval.js analyze plugins/plugin-builder --format markdown",
+    "eval:eval": "node plugins/plugin-eval/scripts/plugin-eval.js analyze plugins/plugin-eval --format markdown",
+    "eval:all": "npm run eval:builder && npm run eval:eval",
+    "validate:claude": "claude plugin validate plugins/plugin-builder && claude plugin validate plugins/plugin-eval"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

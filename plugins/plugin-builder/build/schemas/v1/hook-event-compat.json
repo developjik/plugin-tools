@@ -1,0 +1,7 @@
+{
+  "$id": "https://plugin-builder/schemas/v1/hook-event-compat.json",
+  "description": "Declarative hook event target compatibility. Validator reads this; adapters MUST NOT hardcode.",
+  "common": ["PreToolUse", "PostToolUse", "Stop", "SessionStart", "UserPromptSubmit"],
+  "claudeOnly": ["Notification", "SubagentStop", "PreCompact", "SessionEnd"],
+  "codexOnly": ["PermissionRequest"]
+}

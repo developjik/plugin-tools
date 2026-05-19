@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plugin-builder/schemas/v1/unified-spec.schema.json",
+  "title": "Plugin Builder UnifiedSpec v1.0",
+  "type": "object",
+  "required": ["specVersion", "name", "version", "description", "targets"],
+  "properties": {
+    "specVersion": { "const": "1.0" },
+    "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-z0-9.]+)?$" },
+    "description": { "type": "string", "maxLength": 200 },
+    "author": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "url": { "type": "string" }
+      }
+    },
+    "homepage": { "type": "string", "format": "uri" },
+    "repository": { "type": "string", "format": "uri" },
+    "license": { "type": "string" },
+    "category": { "type": "string" },
+    "claude": {
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" }
+      }
+    },
+    "codex": {
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" },
+        "policy": {
+          "type": "object",
+          "properties": {
+            "installation": { "type": "string", "enum": ["AVAILABLE", "INSTALLED_BY_DEFAULT", "NOT_AVAILABLE"] },
+            "authentication": { "type": "string" }
+          }
+        }
+      }
+    },
+    "targets": {
+      "type": "array",
+      "items": { "enum": ["claude-code","codex"] },
+      "minItems": 1
+    },
+    "commands": { "type": "array", "items": { "$ref": "#/$defs/CommandSpec" } },
+    "skills": { "type": "array", "items": { "$ref": "#/$defs/SkillSpec" } },
+    "agents": { "type": "array", "items": { "$ref": "#/$defs/AgentSpec" } },
+    "hooks": { "type": "array", "items": { "$ref": "#/$defs/HookSpec" } },
+    "mcpServers": { "type": "array", "items": { "$ref": "#/$defs/McpSpec" } },
+    "displayName": { "type": "string" },
+    "composerIcon": { "type": "string" },
+    "defaultPrompt": { "type": "array", "items": { "type": "string" } },
+    "interface": { "$ref": "#/$defs/CodexInterfaceExtras" }
+  },
+  "$defs": {
+    "CommandSpec": {
+      "type": "object",
+      "required": ["name", "description"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "description": { "type": "string" },
+        "argsHint": { "type": "string" },
+        "body": { "type": "string" },
+        "frontmatter": { "type": "object" }
+      }
+    },
+    "SkillSpec": {
+      "type": "object",
+      "required": ["name", "description"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$" },
+        "description": { "type": "string", "minLength": 20 },
+        "body": { "type": "string" },
+        "allowed-tools": { "type": "array", "items": { "type": "string" } },
+        "disable-model-invocation": { "type": "boolean" },
+        "user-invocable": { "type": "boolean" },
+        "model": { "type": "string" },
+        "effort": { "type": "string" },
+        "argument-hint": { "type": "string" },
+        "paths": { "type": "array", "items": { "type": "string" } },
+        "codex": { "type": "object" }
+      }
+    },
+    "AgentSpec": {
+      "type": "object",
+      "required": ["name", "description"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "body": { "type": "string" },
+        "tools": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "HookSpec": {
+      "type": "object",
+      "required": ["event", "command"],
+      "properties": {
+        "event": { "type": "string" },
+        "matcher": { "type": "string" },
+        "command": { "type": "string" },
+        "scriptPath": { "type": "string" }
+      }
+    },
+    "McpSpec": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$" },
+        "transport": { "enum": ["stdio","http","sse"] },
+        "command": { "type": "string" },
+        "url": { "type": "string", "format": "uri" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "transport": { "const": "stdio" } }, "required": ["transport"] },
+          "then": { "required": ["command"] }
+        },
+        {
+          "if": { "properties": { "transport": { "enum": ["http", "sse"] } }, "required": ["transport"] },
+          "then": { "required": ["url"] }
+        }
+      ]
+    },
+    "CodexInterfaceExtras": {
+      "type": "object",
+      "properties": {
+        "logo": { "type": "string" },
+        "screenshots": { "type": "array", "items": { "type": "string" } },
+        "brandColor": { "type": "string" },
+        "capabilities": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

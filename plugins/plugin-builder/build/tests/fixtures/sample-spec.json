@@ -1,0 +1,47 @@
+{
+  "specVersion": "1.0",
+  "name": "my-i18n-guard",
+  "version": "0.1.0",
+  "description": "Cross-target i18n key linter for frontend codebases.",
+  "author": { "name": "Test", "email": "test@example.com" },
+  "license": "MIT",
+  "category": "dev-tools",
+  "targets": ["claude-code", "codex"],
+  "displayName": "i18n Guard",
+  "defaultPrompt": [
+    "Lint i18n keys in this repo",
+    "Find missing translations"
+  ],
+  "commands": [
+    {
+      "name": "check",
+      "description": "Run i18n key audit on staged files",
+      "argsHint": "[files...]",
+      "body": "Run the i18n linter.",
+      "frontmatter": { "model": "sonnet", "allowed-tools": ["Read", "Bash"] }
+    },
+    {
+      "name": "sync",
+      "description": "Sync keys with Lokalise",
+      "body": "Pull latest keys."
+    }
+  ],
+  "skills": [
+    {
+      "name": "i18n-key-guard",
+      "description": "Detect hardcoded user-facing strings, missing locale keys, and cross-locale drift before release.",
+      "allowed-tools": ["Read", "Grep", "Bash"],
+      "disable-model-invocation": false,
+      "user-invocable": true,
+      "body": "# i18n Key Guard\n\nDetects i18n violations."
+    }
+  ],
+  "hooks": [
+    { "event": "PreToolUse", "matcher": "Edit", "command": "scripts/check-i18n.sh" },
+    { "event": "Notification", "command": "scripts/notify.sh" },
+    { "event": "PermissionRequest", "command": "scripts/codex-permission.sh" }
+  ],
+  "mcpServers": [
+    { "name": "lokalise", "transport": "stdio", "command": "lokalise-mcp" }
+  ]
+}

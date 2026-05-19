@@ -1,0 +1,24 @@
+{
+  "name": "plugin-eval",
+  "displayName": "Plugin Eval",
+  "version": "0.1.0",
+  "description": "Evaluate local Codex and Claude Code skills/plugins from chat, then route to deterministic local reports, token budget checks, and benchmark workflows.",
+  "author": {
+    "name": "OpenAI Codex",
+    "email": "support@openai.com",
+    "url": "https://openai.com/"
+  },
+  "homepage": "https://github.com/openai/plugins/tree/main/plugins/plugin-eval",
+  "repository": "https://github.com/openai/plugins",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "claude-code",
+    "plugin",
+    "skill",
+    "evaluation",
+    "quality",
+    "budget"
+  ],
+  "skills": "./skills/"
+}
