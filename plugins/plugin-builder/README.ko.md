@@ -8,11 +8,11 @@ Plugin Builder는 하나의 UnifiedSpec으로 Claude Code와 OpenAI Codex 플러
 
 ```bash
 # Claude Code
-/plugin marketplace add developjik/plugin-builder
+/plugin marketplace add developjik/plugin-tools
 /plugin install plugin-builder@plugin-builder-official
 
 # Codex
-codex plugin marketplace add github:developjik/plugin-builder
+codex plugin marketplace add github:developjik/plugin-tools
 codex plugin install plugin-builder
 ```
 

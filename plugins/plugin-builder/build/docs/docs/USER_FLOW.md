@@ -43,12 +43,12 @@ flowchart TD
 
 **In Claude Code:**
 ```
-/plugin marketplace add developjik/plugin-builder
+/plugin marketplace add developjik/plugin-tools
 ```
 
 **In Codex:**
 ```
-codex plugin marketplace add github:developjik/plugin-builder
+codex plugin marketplace add github:developjik/plugin-tools
 ```
 
 ### Step 2 — Install the plugin

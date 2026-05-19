@@ -22,8 +22,8 @@
         "authentication": "ON_INSTALL"
       },
       "category": "DevTools",
-      "homepage": "https://github.com/developjik/plugin-builder",
-      "repository": "https://github.com/developjik/plugin-builder"
+      "homepage": "https://github.com/developjik/plugin-tools/tree/main/plugins/plugin-builder",
+      "repository": "https://github.com/developjik/plugin-tools"
     },
     {
       "name": "plugin-eval",

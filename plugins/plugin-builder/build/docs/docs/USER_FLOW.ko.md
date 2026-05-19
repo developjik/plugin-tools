@@ -43,12 +43,12 @@ flowchart TD
 
 **Claude Code 안에서:**
 ```
-/plugin marketplace add developjik/plugin-builder
+/plugin marketplace add developjik/plugin-tools
 ```
 
 **Codex 안에서:**
 ```
-codex plugin marketplace add github:developjik/plugin-builder
+codex plugin marketplace add github:developjik/plugin-tools
 ```
 
 ### Step 2 — Plugin 설치

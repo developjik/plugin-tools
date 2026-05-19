@@ -5,8 +5,8 @@
 ## Local checkout
 
 ```bash
-git clone https://github.com/developjik/plugin-builder
-cd plugin-builder
+git clone https://github.com/developjik/plugin-tools
+cd plugin-tools/plugins/plugin-builder
 node --version    # require >= 20
 ```
 

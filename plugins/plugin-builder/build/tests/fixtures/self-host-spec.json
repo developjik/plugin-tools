@@ -6,8 +6,8 @@
   "author": { "name": "developjik", "email": "developjik@colosseum.kr" },
   "license": "MIT",
   "category": "dev-tools",
-  "homepage": "https://github.com/developjik/plugin-builder",
-  "repository": "https://github.com/developjik/plugin-builder",
+  "homepage": "https://github.com/developjik/plugin-tools/tree/main/plugins/plugin-builder",
+  "repository": "https://github.com/developjik/plugin-tools",
   "targets": ["claude-code", "codex"],
   "displayName": "Plugin Builder",
   "defaultPrompt": [

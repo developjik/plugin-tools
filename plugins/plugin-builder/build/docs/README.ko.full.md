@@ -16,12 +16,12 @@
 
 **Claude Code:**
 ```
-/plugin marketplace add developjik/plugin-builder
+/plugin marketplace add developjik/plugin-tools
 ```
 
 **Codex:**
 ```
-codex plugin marketplace add github:developjik/plugin-builder
+codex plugin marketplace add github:developjik/plugin-tools
 ```
 
 ### 2. Plugin 설치 (1회)
@@ -106,8 +106,8 @@ codex plugin install <plugin-name>
 > 코드 기여 / CI 통합용. **일반 사용자는 위 사용자 가이드만 보세요** — CLI 는 implementation detail 입니다.
 
 ```bash
-git clone https://github.com/developjik/plugin-builder
-cd plugin-builder
+git clone https://github.com/developjik/plugin-tools
+cd plugin-tools/plugins/plugin-builder
 npm test        # 132 tests PASS 확인
 ```
 

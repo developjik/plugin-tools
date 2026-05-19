@@ -18,8 +18,8 @@
 
 Install:
 ```bash
-git clone https://github.com/developjik/plugin-builder
-cd plugin-builder
+git clone https://github.com/developjik/plugin-tools
+cd plugin-tools/plugins/plugin-builder
 npm test        # 132 tests must PASS
 ```
 

@@ -16,12 +16,12 @@ Version: 0.7.0 | License: MIT | Node: >=20 | Zero npm dependencies
 
 **Claude Code:**
 ```
-/plugin marketplace add developjik/plugin-builder
+/plugin marketplace add developjik/plugin-tools
 ```
 
 **Codex:**
 ```
-codex plugin marketplace add github:developjik/plugin-builder
+codex plugin marketplace add github:developjik/plugin-tools
 ```
 
 ### 2. Install the plugin (once)
@@ -106,8 +106,8 @@ Natural-language phrases like "validate this plugin" or "publish to marketplace"
 > For code contributions and CI integration. **End users should follow the user guide above** — the CLI is an implementation detail.
 
 ```bash
-git clone https://github.com/developjik/plugin-builder
-cd plugin-builder
+git clone https://github.com/developjik/plugin-tools
+cd plugin-tools/plugins/plugin-builder
 npm test        # expect 132 tests PASS
 ```
 
