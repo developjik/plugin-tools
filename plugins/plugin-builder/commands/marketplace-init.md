@@ -1,6 +1,6 @@
 ---
 description: Create a Claude, Codex, and (optional) Cursor marketplace root.
-argument-hint: "<root> [--owner-name <name>] [--owner-email <email>]"
+argument-hint: "<root> [--name <id>] [--display-name <human>] [--owner-name <name>] [--owner-email <email>] [--force]"
 allowed-tools: ["AskUserQuestion", "Bash", "Read"]
 ---
 

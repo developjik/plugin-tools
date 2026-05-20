@@ -101,4 +101,49 @@ test('ir.normalize: defaults applied', () => {
   assert.equal(out.category, 'other');
   assert.deepEqual(out.commands, []);
   assert.deepEqual(out.skills, []);
+  assert.deepEqual(out.rules, []);
+});
+
+test('ir.validate: rules accepted with description + alwaysApply + globs', () => {
+  const v = ir.validate({
+    specVersion: '1.0', name: 'xy', version: '0.1.0', description: 'x', targets: ['cursor'],
+    rules: [{ name: 'prefer-const', description: 'Prefer const', alwaysApply: true, globs: ['**/*.ts'] }],
+  });
+  assert.equal(v.ok, true, 'errors: ' + v.errors.join('; '));
+});
+
+test('ir.validate: rule name must be kebab-case', () => {
+  const v = ir.validate({
+    specVersion: '1.0', name: 'xy', version: '0.1.0', description: 'x', targets: ['cursor'],
+    rules: [{ name: 'BadName', description: 'd' }],
+  });
+  assert.equal(v.ok, false);
+  assert.match(v.errors.join(';'), /rules\[0\]\.name/);
+});
+
+test('ir.validate: rule.alwaysApply must be boolean', () => {
+  const v = ir.validate({
+    specVersion: '1.0', name: 'xy', version: '0.1.0', description: 'x', targets: ['cursor'],
+    rules: [{ name: 'r4', description: 'd', alwaysApply: 'yes' }],
+  });
+  assert.equal(v.ok, false);
+  assert.match(v.errors.join(';'), /alwaysApply/);
+});
+
+test('ir.validate: rule.globs accepts string or string[]', () => {
+  const ok1 = ir.validate({
+    specVersion: '1.0', name: 'xy', version: '0.1.0', description: 'x', targets: ['cursor'],
+    rules: [{ name: 'r1', description: 'd', globs: '**/*.ts' }],
+  });
+  const ok2 = ir.validate({
+    specVersion: '1.0', name: 'xy', version: '0.1.0', description: 'x', targets: ['cursor'],
+    rules: [{ name: 'r2', description: 'd', globs: ['**/*.ts', '**/*.tsx'] }],
+  });
+  assert.equal(ok1.ok, true);
+  assert.equal(ok2.ok, true);
+  const bad = ir.validate({
+    specVersion: '1.0', name: 'xy', version: '0.1.0', description: 'x', targets: ['cursor'],
+    rules: [{ name: 'r3', description: 'd', globs: 42 }],
+  });
+  assert.equal(bad.ok, false);
 });

@@ -12,7 +12,7 @@
     "extraArgs": []
   },
   "workspace": {
-    "sourcePath": "/Users/developjik/Library/Mobile Documents/com~apple~CloudDocs/02_Personal/plugin-builder/build/benchmark-workspace",
+    "sourcePath": "plugins/plugin-builder/build/benchmark-workspace",
     "setupMode": "copy",
     "preserve": "on-failure"
   },

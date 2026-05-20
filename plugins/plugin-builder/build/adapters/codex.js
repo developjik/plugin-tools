@@ -87,6 +87,10 @@ class CodexAdapter extends PluginAdapter {
       warnings.push(`agent '${ag.name}' has no Codex equivalent; dropped`);
     }
 
+    if (Array.isArray(spec.rules) && spec.rules.length) {
+      warnings.push(`rules (${spec.rules.length}) is cursor-only; dropped from codex target`);
+    }
+
     const hookFile = this.#hooks(spec, warnings);
     if (hookFile) files.push(hookFile);
 
@@ -95,6 +99,44 @@ class CodexAdapter extends PluginAdapter {
         path: '.mcp.json',
         content: this.#mcpFile(spec.mcpServers),
       });
+    }
+
+    // codex.* namespace: apps (Codex Apps connectors)
+    if (spec.codex && Array.isArray(spec.codex.apps) && spec.codex.apps.length) {
+      files.push({
+        path: '.app.json',
+        content: this.#appFile(spec.codex.apps),
+      });
+    }
+
+    // Cross-target warnings: claude.*/cursor.* data dropped from codex emit
+    if (spec.claude) {
+      if (Array.isArray(spec.claude.lsp) && spec.claude.lsp.length) {
+        warnings.push(`claude.lsp (${spec.claude.lsp.length}) is claude-only; dropped from codex target`);
+      }
+      if (Array.isArray(spec.claude.monitors) && spec.claude.monitors.length) {
+        warnings.push(`claude.monitors (${spec.claude.monitors.length}) is claude-only; dropped from codex target`);
+      }
+      if (Array.isArray(spec.claude.bin) && spec.claude.bin.length) {
+        warnings.push(`claude.bin (${spec.claude.bin.length}) is claude-only; dropped from codex target`);
+      }
+      if (spec.claude.userConfig && Object.keys(spec.claude.userConfig).length) {
+        warnings.push(`claude.userConfig is claude-only; dropped from codex target`);
+      }
+      if (spec.claude.settings && Object.keys(spec.claude.settings).length) {
+        warnings.push(`claude.settings is claude-only; dropped from codex target`);
+      }
+      if (spec.claude.agentExtras && Object.keys(spec.claude.agentExtras).length) {
+        warnings.push(`claude.agentExtras is claude-only; dropped from codex target (Codex has no native agents)`);
+      }
+    }
+    if (spec.cursor) {
+      const cursorOnlyToggles = ['commandExtension', 'inlineHooks', 'inlineMcp', 'publisher', 'tags'];
+      for (const k of cursorOnlyToggles) {
+        if (spec.cursor[k] != null) {
+          warnings.push(`cursor.${k} is cursor-only; dropped from codex target`);
+        }
+      }
     }
 
     files.push({
@@ -116,12 +158,14 @@ class CodexAdapter extends PluginAdapter {
     if (spec.author) m.author = spec.author;
     if (spec.license) m.license = spec.license;
     if (spec.category) m.category = spec.category;
+    if (spec.keywords && spec.keywords.length) m.keywords = spec.keywords;
     if (spec.homepage) m.homepage = spec.homepage;
     if (spec.repository) m.repository = spec.repository;
     if (spec.skills && spec.skills.length) m.skills = './skills/';
 
     const hasHooks = (spec.hooks || []).some(h => !HOOK_COMPAT.claudeOnly.includes(h.event));
-    m.features = { plugin_hooks: hasHooks };
+    const customFeatures = (spec.codex && spec.codex.features) || {};
+    m.features = { plugin_hooks: hasHooks, ...customFeatures };
     if (hasHooks) m.hooks = './hooks/hooks.json';
 
     const iface = {};
@@ -134,7 +178,16 @@ class CodexAdapter extends PluginAdapter {
       if (spec.interface.brandColor) iface.brandColor = spec.interface.brandColor;
       if (spec.interface.capabilities) iface.capabilities = spec.interface.capabilities;
     }
+    if (spec.codex && spec.codex.interfaceMeta) {
+      for (const k of ['shortDescription', 'longDescription', 'developerName', 'websiteURL', 'privacyPolicyURL', 'termsOfServiceURL']) {
+        if (spec.codex.interfaceMeta[k] != null) iface[k] = spec.codex.interfaceMeta[k];
+      }
+    }
     if (Object.keys(iface).length) m.interface = iface;
+
+    if (spec.codex && Array.isArray(spec.codex.apps) && spec.codex.apps.length) {
+      m.apps = './.app.json';
+    }
 
     return JSON.stringify(m, null, 2) + '\n';
   }
@@ -194,7 +247,15 @@ class CodexAdapter extends PluginAdapter {
     const hooksByEvent = {};
     for (const h of allowed) {
       hooksByEvent[h.event] ??= [];
-      const entry = { hooks: [{ type: 'command', command: h.command }] };
+      const hookType = h.type || 'command';
+      const inner = { type: hookType };
+      if (hookType === 'command') inner.command = h.command;
+      if (hookType === 'http') inner.url = h.url;
+      if (hookType === 'mcp_tool') inner.toolName = h.toolName;
+      if (hookType === 'prompt') inner.prompt = h.prompt;
+      if (hookType === 'agent') inner.agent = h.agent;
+      if (h.statusMessage) inner.statusMessage = h.statusMessage;
+      const entry = { hooks: [inner] };
       if (h.matcher) entry.matcher = h.matcher;
       hooksByEvent[h.event].push(entry);
     }
@@ -210,8 +271,23 @@ class CodexAdapter extends PluginAdapter {
       const e = {};
       if (s.transport) e.type = s.transport;
       if (s.command) e.command = s.command;
+      if (Array.isArray(s.args) && s.args.length) e.args = s.args;
+      if (s.env && typeof s.env === 'object' && Object.keys(s.env).length) e.env = s.env;
       if (s.url) e.url = s.url;
+      if (s.headers && typeof s.headers === 'object' && Object.keys(s.headers).length) e.headers = s.headers;
       out.mcpServers[s.name] = e;
+    }
+    return JSON.stringify(out, null, 2) + '\n';
+  }
+
+  #appFile(apps) {
+    const out = { apps: [] };
+    for (const a of apps) {
+      const e = { name: a.name, provider: a.provider };
+      if (a.auth) e.auth = a.auth;
+      if (Array.isArray(a.scopes) && a.scopes.length) e.scopes = a.scopes;
+      if (a.config && typeof a.config === 'object') e.config = a.config;
+      out.apps.push(e);
     }
     return JSON.stringify(out, null, 2) + '\n';
   }

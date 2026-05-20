@@ -1,6 +1,6 @@
 ---
 description: Run Plugin Builder validation on a plugin directory.
-argument-hint: "<plugin-dir>"
+argument-hint: "<plugin-dir> [--spec <file>] [--strict]"
 allowed-tools: ["Bash", "Read"]
 ---
 

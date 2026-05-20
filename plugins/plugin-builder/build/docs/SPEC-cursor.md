@@ -1,26 +1,47 @@
-# Cursor Target Spec (v1)
+# Cursor Target Spec (v3 — UnifiedSpec v1.1)
 
 UnifiedSpec → Cursor plugin conversion rules. Source of truth for `build/adapters/cursor.js`.
 
-## Scope (v1)
+Authoritative external references:
+- https://cursor.com/docs/plugins
+- https://cursor.com/docs/reference/plugins
 
-Cursor target emits **skills + hooks + mcp.json** only.
+## Scope (v3, additive over v2)
 
-| UnifiedSpec primitive | Cursor v1 |
+Cursor target emits the full Cursor plugin surface:
+
+| UnifiedSpec primitive | Cursor output |
 |---|---|
-| `skills[]` | Emitted as `skills/{name}/SKILL.md` |
-| `hooks[]` | Emitted as `hooks/hooks.json` (renamed to `hooks/cursor.json` in hybrid scaffold) with camelCase events |
-| `mcpServers[]` | Emitted as `mcp.json` at plugin root |
-| `commands[]` | **Dropped** with warning — out of scope v1 |
-| `agents[]` | **Dropped** with warning — out of scope v1 |
-| Cursor `rules` primitive | **Not modelled in UnifiedSpec** — deferred to a future spec bump |
+| `rules[]` | `rules/{name}.mdc` with `description` / `alwaysApply` / `globs` frontmatter |
+| `skills[]` | `skills/{name}/SKILL.md` (open SKILL.md standard) |
+| `agents[]` | `agents/{name}.md` with `name` / `description` / `tools` / `disallowedTools` / `model` frontmatter |
+| `commands[]` | `commands/{name}.<ext>` — extension controlled by `spec.cursor.commandExtension` (`md` default, `mdc`/`markdown`/`txt` accepted) |
+| `hooks[]` | `hooks/hooks.json` (camelCase events, flat schema) OR inlined into manifest when `spec.cursor.inlineHooks=true` |
+| `mcpServers[]` | `mcp.json` at plugin root (with `args` / `env` / `headers`) OR inlined into manifest when `spec.cursor.inlineMcp=true` |
+
+### v1.1 cursor-only manifest extensions
+
+`spec.cursor.*` fields lift into `.cursor-plugin/plugin.json`:
+
+- `displayName`, `publisher`, `tags`, `logo`, `keywords` — manifest metadata
+- `commandExtension` — switches the file extension for emitted commands
+- `inlineHooks` / `inlineMcp` — opt-in inline mode; the corresponding `hooks/hooks.json` or `mcp.json` file is suppressed
+
+### Marketplace catalog entry
+
+`core/marketplace-entry.js::cursorEntry` emits `{ name, description, source }` only. **`version` was removed in v0.8** — the official Cursor marketplace.schema.json does not declare it and strict validators may reject. The plugin's own `.cursor-plugin/plugin.json` still carries `version`.
+
+v1's "drop agents/commands" behaviour was a bug: Cursor's reference plugin schema documents agents and commands as first-class primitives, so dropping them silently produced incomplete plugins. v2+ emits them.
 
 ## Output layout
 
 ```
 .cursor-plugin/plugin.json
+rules/{name}.mdc
 skills/{name}/SKILL.md
-hooks/hooks.json       # camelCase events
+agents/{name}.md
+commands/{name}.md
+hooks/hooks.json       # camelCase events, FLAT schema (see below)
 mcp.json               # NOT .mcp.json (claude/codex)
 README.md
 ```
@@ -41,13 +62,24 @@ In hybrid scaffold (multi-target builds), `hooks/hooks.json` is renamed to `hook
 | `category` | folded into `keywords[0]` unless `cursor.keywords` overrides |
 | `cursor.keywords` | `keywords` (explicit override) |
 | `cursor.logo` | `logo` |
+| `rules[]` (non-empty) | `rules: "./rules/"` |
+| `skills[]` (non-empty) | `skills: "./skills/"` |
+| `agents[]` (non-empty) | `agents: "./agents/"` |
+| `commands[]` (non-empty) | `commands: "./commands/"` |
+| `hooks[]` w/ any cursor-supported event | `hooks: "./hooks/hooks.json"` |
+| `mcpServers[]` (non-empty) | `mcpServers: "./mcp.json"` |
 
-Cursor does not use `category`. UnifiedSpec category folds to a single-item `keywords` array.
+## Rule frontmatter (`.mdc`)
 
-## Skill frontmatter
+Per https://cursor.com/docs/reference/plugins:
 
-Cursor follows the open SKILL.md standard. The following keys are **preserved**:
+- `description` (required)
+- `alwaysApply` (boolean — applies to all files when true)
+- `globs` (string or string[] — file patterns the rule applies to)
 
+## Skill frontmatter (open SKILL.md standard)
+
+Preserved:
 - `name`, `description` (required)
 - `argument-hint`
 - `allowed-tools`
@@ -55,14 +87,18 @@ Cursor follows the open SKILL.md standard. The following keys are **preserved**:
 - `user-invocable`
 
 Dropped with warning (no Cursor semantics):
-
 - `model`
 - `effort`
 - `paths`
 
+## Agent / Command frontmatter
+
+- Agent: `name`, `description`, `tools[]` (optional)
+- Command: `name`, `description`, `argument-hint` (optional, mapped from UnifiedSpec `argsHint`)
+
 ## Hook event name mapping
 
-Cursor uses camelCase event names. Mapping applied during conversion:
+Cursor uses camelCase event names. Conversion table:
 
 | Claude PascalCase | Cursor camelCase |
 |---|---|
@@ -70,49 +106,84 @@ Cursor uses camelCase event names. Mapping applied during conversion:
 | `PostToolUse` | `postToolUse` |
 | `SessionStart` | `sessionStart` |
 | `SessionEnd` | `sessionEnd` |
+| `Stop` | `stop` |
+| `UserPromptSubmit` | `beforeSubmitPrompt` |
+| `SubagentStop` | `subagentStop` |
+| `PreCompact` | `preCompact` |
 
 Cursor-only events (pass-through verbatim):
 
-- `afterFileEdit`
-- `beforeTabFileRead`
-- `beforeShellExecution`
-- `afterShellExecution`
+- `postToolUseFailure`
+- `subagentStart`
+- `beforeShellExecution`, `afterShellExecution`
+- `beforeMCPExecution`, `afterMCPExecution`
+- `beforeReadFile`, `afterFileEdit`
+- `beforeSubmitPrompt`
+- `afterAgentResponse`, `afterAgentThought`
+- `beforeTabFileRead`, `afterTabFileEdit`
+- `workspaceOpen`
 
 Dropped with warning (no Cursor equivalent):
 
-- `Stop`
-- `UserPromptSubmit`
 - `Notification` (claude-only)
-- `SubagentStop` (claude-only)
-- `PreCompact` (claude-only)
 - `PermissionRequest` (codex-only)
 
-When emitting to Claude or Codex targets, `cursorOnly` events are now also dropped with a warning so the same UnifiedSpec is safe to fan out to all three targets.
+When emitting to Claude or Codex targets, `cursorOnly` events are dropped with a warning so the same UnifiedSpec can fan out to all three targets safely.
 
-## MCP servers
+## hooks.json schema (CRITICAL: flat, not Claude nested)
 
-Cursor reads `mcp.json` at plugin root. Fields supported:
+Cursor `hooks/hooks.json` uses a flat per-event array:
+
+```json
+{
+  "hooks": {
+    "afterFileEdit": [
+      { "command": "./scripts/format-code.sh" }
+    ],
+    "beforeShellExecution": [
+      { "command": "./scripts/validate-shell.sh", "matcher": "rm|curl|wget" }
+    ],
+    "sessionEnd": [
+      { "command": "./scripts/audit.sh" }
+    ]
+  }
+}
+```
+
+Entries carry `command` (required) and `matcher` (optional regex) directly.
+
+**Do NOT** emit Claude's nested wrapper:
+
+```json
+"PreToolUse": [{ "hooks": [{ "type": "command", "command": "…" }] }]
+```
+
+Cursor's loader silently ignores entries wrapped in `{type:"command"}` — this was the v1 bug.
+
+## MCP servers (`mcp.json`)
+
+Located at plugin root (NOT `.mcp.json`). Fields:
 
 - `command`, `args`, `env` (stdio)
-- `url`, `headers` (remote — http/sse auto-detect by presence of `url`)
+- `url`, `headers` (remote — http/sse auto-detected by `url` presence)
 
-UnifiedSpec `transport` is not emitted as a structured field for Cursor (auto-detected by Cursor at install time).
+UnifiedSpec `transport` is omitted as a structured field for Cursor (auto-detected at install).
 
 ## Marketplace catalog
 
-Single-plugin marketplace root format follows `cursor.com/docs/plugins/building`:
+Single-plugin marketplace root format follows `cursor.com/docs/plugins`:
 
 ```json
 {
   "name": "<marketplace-id>",
   "owner": { "name": "...", "email": "..." },
   "plugins": [
-    { "name": "<plugin-name>", "source": "<path-or-repo>", "description": "...", "version": "..." }
+    { "name": "<plugin-name>", "source": "<path-or-repo>", "description": "..." }
   ]
 }
 ```
 
-Emitted to `<marketplace-root>/.cursor-plugin/marketplace.json`. Only patched when `spec.targets` includes `cursor` — existing 2-target build flows are unchanged.
+Emitted to `<marketplace-root>/.cursor-plugin/marketplace.json`. Only patched when `spec.targets` includes `cursor`.
 
 ## Install (end user)
 
@@ -120,10 +191,22 @@ Emitted to `<marketplace-root>/.cursor-plugin/marketplace.json`. Only patched wh
 /add-plugin <plugin-name>
 ```
 
-Or search by name in the Cursor plugin marketplace.
+Or search by name in the Cursor plugin marketplace at cursor.com/marketplace.
 
-## References
+## Verification checklist
 
-- Cursor plugin building reference: https://cursor.com/docs/plugins/building
-- Cursor marketplace: https://cursor.com/marketplace
-- Compound Engineering Cursor spec (cross-reference): https://github.com/EveryInc/compound-engineering-plugin/blob/main/docs/specs/cursor.md
+Against https://cursor.com/docs/plugins:
+
+- [x] `.cursor-plugin/plugin.json` at plugin root
+- [x] Manifest `name` is kebab-case
+- [x] Manifest references `rules` / `skills` / `agents` / `commands` / `hooks` / `mcpServers` paths when populated
+- [x] `keywords[]` (not `category`)
+- [x] Rules emitted as `.mdc` with `description` / `alwaysApply` / `globs`
+- [x] Skills follow open SKILL.md standard
+- [x] Agents emitted as `agents/{name}.md`
+- [x] Commands emitted as `commands/{name}.md`
+- [x] `hooks/hooks.json` uses FLAT `{event: [{command, matcher?}]}` schema
+- [x] camelCase hook event names
+- [x] Cursor-only events (`workspaceOpen`, `beforeMCPExecution`, ...) pass through
+- [x] `mcp.json` at root (not `.mcp.json`)
+- [x] Marketplace catalog at `.cursor-plugin/marketplace.json`

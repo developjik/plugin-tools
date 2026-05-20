@@ -10,8 +10,8 @@
         "source": "local",
         "path": "./"
       },
-      "version": "0.7.0",
-      "description": "Scaffold Claude Code + OpenAI Codex plugins from a single UnifiedSpec.",
+      "version": "0.8.1",
+      "description": "Scaffold Claude Code, OpenAI Codex, and Cursor plugins from a single UnifiedSpec.",
       "author": {
         "name": "developjik",
         "email": "developjik@colosseum.kr"
@@ -22,8 +22,8 @@
         "authentication": "ON_INSTALL"
       },
       "category": "DevTools",
-      "homepage": "https://github.com/developjik/plugin-builder",
-      "repository": "https://github.com/developjik/plugin-builder"
+      "homepage": "https://github.com/developjik/plugin-tools/tree/main/plugins/plugin-builder",
+      "repository": "https://github.com/developjik/plugin-tools"
     }
   ]
 }

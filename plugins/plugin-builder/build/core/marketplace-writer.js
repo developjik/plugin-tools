@@ -193,9 +193,12 @@ async function patchMarketplaceRoot(rootDir, spec, opts = {}) {
   const codexPath = path.join(rootDir, CODEX_MARKETPLACE_REL);
   const cursorPath = path.join(rootDir, CURSOR_MARKETPLACE_REL);
 
-  // Cursor catalog opt-in: only patched when spec.targets explicitly includes
-  // "cursor". Keeps existing 2-target call sites unchanged.
-  const cursorEnabled = Array.isArray(spec.targets) && spec.targets.includes('cursor');
+  // Back-compat: specs without targets still patch the historical Claude+Codex pair.
+  // Specs with targets patch exactly the selected platform catalogs.
+  const targetSet = Array.isArray(spec.targets) ? new Set(spec.targets) : null;
+  const claudeEnabled = !targetSet || targetSet.has('claude-code');
+  const codexEnabled = !targetSet || targetSet.has('codex');
+  const cursorEnabled = targetSet ? targetSet.has('cursor') : false;
 
   // All catalogs keep source.path relative to the marketplace root.
   const codexOpts = { ...opts };
@@ -212,24 +215,26 @@ async function patchMarketplaceRoot(rootDir, spec, opts = {}) {
   }
 
   // Build & validate all in memory (no IO yet beyond reads).
-  const claudeBuilt = buildClaudeContent(claudePath, spec, claudeOpts);
-  const codexBuilt = buildCodexContent(codexPath, spec, codexOpts);
+  const claudeBuilt = claudeEnabled ? buildClaudeContent(claudePath, spec, claudeOpts) : null;
+  const codexBuilt = codexEnabled ? buildCodexContent(codexPath, spec, codexOpts) : null;
   const cursorBuilt = cursorEnabled ? buildCursorContent(cursorPath, spec, cursorOpts) : null;
 
-  const claudeBefore = fs.existsSync(claudePath) ? fs.readFileSync(claudePath, 'utf8') : '';
-  const codexBefore = fs.existsSync(codexPath) ? fs.readFileSync(codexPath, 'utf8') : '';
+  const claudeBefore = claudeEnabled && fs.existsSync(claudePath) ? fs.readFileSync(claudePath, 'utf8') : '';
+  const codexBefore = codexEnabled && fs.existsSync(codexPath) ? fs.readFileSync(codexPath, 'utf8') : '';
   const cursorBefore = cursorEnabled && fs.existsSync(cursorPath) ? fs.readFileSync(cursorPath, 'utf8') : '';
-  const claudeNoop = claudeBefore === claudeBuilt.content;
-  const codexNoop = codexBefore === codexBuilt.content;
+  const claudeNoop = !claudeEnabled || claudeBefore === claudeBuilt.content;
+  const codexNoop = !codexEnabled || codexBefore === codexBuilt.content;
   const cursorNoop = !cursorEnabled || cursorBefore === cursorBuilt.content;
   if (claudeNoop && codexNoop && cursorNoop) {
-    const noopResult = { action: 'noop', name: spec.name, claude: { action: 'noop' }, codex: { action: 'noop' } };
+    const noopResult = { action: 'noop', name: spec.name };
+    if (claudeEnabled) noopResult.claude = { action: 'noop' };
+    if (codexEnabled) noopResult.codex = { action: 'noop' };
     if (cursorEnabled) noopResult.cursor = { action: 'noop' };
     return noopResult;
   }
 
   let claudeResult = { action: 'noop' };
-  if (!claudeNoop) {
+  if (claudeEnabled && !claudeNoop) {
     fs.mkdirSync(path.dirname(claudePath), { recursive: true });
     const release = await lockfile.acquire(claudePath, { retries: opts.retries ?? 3 });
     try {
@@ -241,7 +246,7 @@ async function patchMarketplaceRoot(rootDir, spec, opts = {}) {
   }
 
   let codexResult = { action: 'noop' };
-  if (!codexNoop) {
+  if (codexEnabled && !codexNoop) {
     fs.mkdirSync(path.dirname(codexPath), { recursive: true });
     const release = await lockfile.acquire(codexPath, { retries: opts.retries ?? 3 });
     try {
@@ -250,7 +255,7 @@ async function patchMarketplaceRoot(rootDir, spec, opts = {}) {
     } catch (e) {
       try { release.release(); } catch {}
       // Rollback Claude. Use `.bak` if write happened; else restore prior content.
-      await rollbackClaude(claudePath, claudeBefore, opts);
+      if (claudeEnabled) await rollbackClaude(claudePath, claudeBefore, opts);
       const err = new Error(`codex marketplace write failed: ${e.message}`);
       err.code = 'ECODEX_WRITE';
       err.cause = e;
@@ -269,8 +274,8 @@ async function patchMarketplaceRoot(rootDir, spec, opts = {}) {
     } catch (e) {
       try { release.release(); } catch {}
       // Rollback Claude + Codex on cursor write failure.
-      await rollbackClaude(claudePath, claudeBefore, opts);
-      await rollbackPath(codexPath, codexBefore, opts);
+      if (claudeEnabled) await rollbackClaude(claudePath, claudeBefore, opts);
+      if (codexEnabled) await rollbackPath(codexPath, codexBefore, opts);
       const err = new Error(`cursor marketplace write failed: ${e.message}`);
       err.code = 'ECURSOR_WRITE';
       err.cause = e;
@@ -279,7 +284,9 @@ async function patchMarketplaceRoot(rootDir, spec, opts = {}) {
     release.release();
   }
 
-  const result = { action: 'append', name: spec.name, claude: claudeResult, codex: codexResult };
+  const result = { action: 'append', name: spec.name };
+  if (claudeEnabled) result.claude = claudeResult;
+  if (codexEnabled) result.codex = codexResult;
   if (cursorEnabled) result.cursor = cursorResult;
   return result;
 }

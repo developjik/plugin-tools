@@ -48,6 +48,20 @@ test('patchMarketplaceRoot: appends second plugin', async () => {
   assert.equal(codex.plugins.length, 2);
 });
 
+test('patchMarketplaceRoot: target-aware publish writes only selected catalogs', async () => {
+  const root = tmpRoot();
+  const r = await mw.patchMarketplaceRoot(root, {
+    ...spec,
+    targets: ['cursor'],
+  });
+  assert.equal(r.cursor.action, 'append');
+  assert.equal(r.claude, undefined);
+  assert.equal(r.codex, undefined);
+  assert.equal(fs.existsSync(path.join(root, mw.CURSOR_MARKETPLACE_REL)), true);
+  assert.equal(fs.existsSync(path.join(root, mw.CLAUDE_MARKETPLACE_REL)), false);
+  assert.equal(fs.existsSync(path.join(root, mw.CODEX_MARKETPLACE_REL)), false);
+});
+
 test('patchMarketplaceRoot: rollback on Codex write fail restores Claude', async () => {
   const root = tmpRoot();
   await mw.patchMarketplaceRoot(root, spec);

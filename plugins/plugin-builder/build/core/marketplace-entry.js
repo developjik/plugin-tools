@@ -134,6 +134,8 @@ function buildCodexRoot(opts = {}) {
 
 // Cursor marketplace plugin entry. Cursor marketplace schema:
 // { name, owner, plugins: [{ name, source, description }] } per cursor.com docs.
+// `version` deliberately omitted — not in cursor marketplace.schema.json; strict
+// validators may reject. Catalog still installs the latest plugin.json version.
 function cursorEntry(spec, opts = {}) {
   const entry = {
     name: spec.name,
@@ -144,7 +146,6 @@ function cursorEntry(spec, opts = {}) {
   } else {
     entry.source = opts.localPath || spec.name;
   }
-  if (spec.version) entry.version = spec.version;
   return entry;
 }
 

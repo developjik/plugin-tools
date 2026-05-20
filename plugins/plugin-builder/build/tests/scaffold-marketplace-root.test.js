@@ -33,6 +33,16 @@ function dualSpec(name) {
   };
 }
 
+function triSpec(name) {
+  return {
+    ...dualSpec(name || 'tri-demo'),
+    specVersion: '1.1',
+    targets: ['claude-code', 'codex', 'cursor'],
+    commands: [{ name: 'check', description: 'Run a tri-target smoke check', body: 'Check.' }],
+    rules: [{ name: 'tri-rule', description: 'Rule description for Cursor target tests.' }],
+  };
+}
+
 function writeSpec(spec) {
   const dir = tmpDir();
   const file = path.join(dir, 'spec.json');
@@ -119,6 +129,24 @@ test('publish: patches both marketplaces under parent root', () => {
   assert.ok(out.root);
   const mp = JSON.parse(fs.readFileSync(path.join(root, '.claude-plugin', 'marketplace.json'), 'utf8'));
   assert.equal(mp.plugins.length, 1);
+});
+
+test('publish: patches cursor marketplace when generated plugin has cursor manifest', () => {
+  const root = path.join(tmpDir(), 'mp');
+  runInit(root);
+  const { file } = writeSpec(triSpec());
+  runScaffold(file, root, ['--no-publish']);
+  const pluginDir = path.join(root, 'tri-demo');
+  const r = spawnSync('node',
+    [BIN, 'publish', pluginDir],
+    { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  const out = JSON.parse(r.stdout);
+  assert.equal(out.cursor.action, 'append');
+  const mp = JSON.parse(fs.readFileSync(path.join(root, '.cursor-plugin', 'marketplace.json'), 'utf8'));
+  assert.equal(mp.plugins.length, 1);
+  assert.equal(mp.plugins[0].name, 'tri-demo');
+  assert.equal(mp.plugins[0].source, './tri-demo');
 });
 
 test('publish: errors when parent root lacks marketplace catalog', () => {

@@ -11,6 +11,13 @@ const SKILL_FRONTMATTER_KEYS = [
 
 const COMMAND_FRONTMATTER_PASSTHROUGH = ['model', 'allowed-tools', 'argument-hint'];
 
+// Per-agent extras keys that lift onto agent frontmatter. Forbidden agent
+// frontmatter keys (`hooks`, `mcpServers`, `permissionMode`) are NEVER lifted
+// even if user puts them in agentExtras — privilege widening guard.
+const AGENT_EXTRA_KEYS = [
+  'effort', 'maxTurns', 'skills', 'memory', 'background', 'isolation', 'disallowedTools',
+];
+
 class ClaudeCodeAdapter extends PluginAdapter {
   constructor() {
     super('claude-code');
@@ -39,10 +46,11 @@ class ClaudeCodeAdapter extends PluginAdapter {
       });
     }
 
+    const agentExtras = (spec.claude && spec.claude.agentExtras) || {};
     for (const ag of spec.agents || []) {
       files.push({
         path: `agents/${ag.name}.md`,
-        content: this.#agentFile(ag),
+        content: this.#agentFile(ag, agentExtras[ag.name]),
       });
     }
 
@@ -56,6 +64,38 @@ class ClaudeCodeAdapter extends PluginAdapter {
       });
     }
 
+    // claude.* namespace components
+    if (spec.claude) {
+      for (const lsp of spec.claude.lsp || []) {
+        // LSP servers consolidated into single .lsp.json file
+      }
+      if (Array.isArray(spec.claude.lsp) && spec.claude.lsp.length) {
+        files.push({
+          path: '.lsp.json',
+          content: this.#lspFile(spec.claude.lsp),
+        });
+      }
+      if (Array.isArray(spec.claude.monitors) && spec.claude.monitors.length) {
+        files.push({
+          path: 'monitors/monitors.json',
+          content: JSON.stringify(spec.claude.monitors, null, 2) + '\n',
+        });
+      }
+      for (const bin of spec.claude.bin || []) {
+        files.push({
+          path: `bin/${bin.path}`,
+          content: bin.content || '#!/usr/bin/env bash\n# Placeholder; populate via authoring tools.\n',
+          mode: bin.mode || '0755',
+        });
+      }
+      if (spec.claude.settings && Object.keys(spec.claude.settings).length) {
+        files.push({
+          path: 'settings.json',
+          content: JSON.stringify(spec.claude.settings, null, 2) + '\n',
+        });
+      }
+    }
+
     const interfaceFields = ['displayName', 'composerIcon', 'defaultPrompt'];
     for (const k of interfaceFields) {
       const v = spec[k];
@@ -65,6 +105,27 @@ class ClaudeCodeAdapter extends PluginAdapter {
     }
     if (spec.interface && Object.keys(spec.interface).length) {
       warnings.push(`codex-only 'interface.${Object.keys(spec.interface).join('/')}' folded into README; not a structured field on claude-code target`);
+    }
+
+    // Cross-target namespace warnings: codex.*/cursor.* data dropped from claude-code emit
+    if (spec.codex) {
+      if (Array.isArray(spec.codex.apps) && spec.codex.apps.length) {
+        warnings.push(`codex.apps (${spec.codex.apps.length}) is codex-only; dropped from claude-code target`);
+      }
+      if (spec.codex.features && Object.keys(spec.codex.features).length) {
+        warnings.push(`codex.features.* is codex-only; dropped from claude-code target`);
+      }
+      if (spec.codex.interfaceMeta && Object.keys(spec.codex.interfaceMeta).length) {
+        warnings.push(`codex.interfaceMeta is codex-only; dropped from claude-code target`);
+      }
+    }
+    if (spec.cursor) {
+      const cursorOnlyToggles = ['commandExtension', 'inlineHooks', 'inlineMcp', 'publisher', 'tags'];
+      for (const k of cursorOnlyToggles) {
+        if (spec.cursor[k] != null) {
+          warnings.push(`cursor.${k} is cursor-only; dropped from claude-code target`);
+        }
+      }
     }
 
     files.push({
@@ -86,12 +147,20 @@ class ClaudeCodeAdapter extends PluginAdapter {
     if (spec.author) m.author = spec.author;
     if (spec.license) m.license = spec.license;
     if (spec.category) m.category = spec.category;
+    if (spec.keywords && spec.keywords.length) m.keywords = spec.keywords;
     if (spec.homepage) m.homepage = spec.homepage;
     if (spec.repository) m.repository = spec.repository;
     if (spec.commands && spec.commands.length) m.commands = './commands/';
     if (spec.skills && spec.skills.length) m.skills = './skills/';
     if (spec.agents && spec.agents.length) m.agents = './agents/';
     if (spec.hooks && spec.hooks.length) m.hooks = './hooks/hooks.json';
+
+    if (spec.claude) {
+      if (Array.isArray(spec.claude.lsp) && spec.claude.lsp.length) m.lspServers = './.lsp.json';
+      if (Array.isArray(spec.claude.monitors) && spec.claude.monitors.length) m.monitors = './monitors/monitors.json';
+      if (spec.claude.userConfig && Object.keys(spec.claude.userConfig).length) m.userConfig = spec.claude.userConfig;
+    }
+
     return JSON.stringify(m, null, 2) + '\n';
   }
 
@@ -114,9 +183,16 @@ class ClaudeCodeAdapter extends PluginAdapter {
     return yamlFrontmatter(fm) + (sk.body || '') + '\n';
   }
 
-  #agentFile(ag) {
+  #agentFile(ag, extras) {
     const fm = { name: ag.name, description: ag.description };
     if (ag.tools) fm.tools = ag.tools;
+    if (ag.disallowedTools) fm.disallowedTools = ag.disallowedTools;
+    if (ag.model) fm.model = ag.model;
+    if (extras && typeof extras === 'object') {
+      for (const k of AGENT_EXTRA_KEYS) {
+        if (extras[k] != null) fm[k] = extras[k];
+      }
+    }
     return yamlFrontmatter(fm) + (ag.body || '') + '\n';
   }
 
@@ -146,7 +222,15 @@ class ClaudeCodeAdapter extends PluginAdapter {
     const hooksByEvent = {};
     for (const h of allowed) {
       hooksByEvent[h.event] ??= [];
-      const entry = { hooks: [{ type: 'command', command: h.command }] };
+      const hookType = h.type || 'command';
+      const inner = { type: hookType };
+      if (hookType === 'command') inner.command = h.command;
+      if (hookType === 'http') inner.url = h.url;
+      if (hookType === 'mcp_tool') inner.toolName = h.toolName;
+      if (hookType === 'prompt') inner.prompt = h.prompt;
+      if (hookType === 'agent') inner.agent = h.agent;
+      if (h.statusMessage) inner.statusMessage = h.statusMessage;
+      const entry = { hooks: [inner] };
       if (h.matcher) entry.matcher = h.matcher;
       hooksByEvent[h.event].push(entry);
     }
@@ -162,8 +246,25 @@ class ClaudeCodeAdapter extends PluginAdapter {
       const e = {};
       if (s.transport) e.type = s.transport;
       if (s.command) e.command = s.command;
+      if (Array.isArray(s.args) && s.args.length) e.args = s.args;
+      if (s.env && typeof s.env === 'object' && Object.keys(s.env).length) e.env = s.env;
       if (s.url) e.url = s.url;
+      if (s.headers && typeof s.headers === 'object' && Object.keys(s.headers).length) e.headers = s.headers;
       out.mcpServers[s.name] = e;
+    }
+    return JSON.stringify(out, null, 2) + '\n';
+  }
+
+  #lspFile(lspList) {
+    const out = {};
+    for (const l of lspList) {
+      const e = { command: l.command };
+      if (Array.isArray(l.args) && l.args.length) e.args = l.args;
+      if (l.env && Object.keys(l.env).length) e.env = l.env;
+      if (l.extensionToLanguage && Object.keys(l.extensionToLanguage).length) e.extensionToLanguage = l.extensionToLanguage;
+      if (l.initializationOptions) e.initializationOptions = l.initializationOptions;
+      if (l.settings) e.settings = l.settings;
+      out[l.language] = e;
     }
     return JSON.stringify(out, null, 2) + '\n';
   }

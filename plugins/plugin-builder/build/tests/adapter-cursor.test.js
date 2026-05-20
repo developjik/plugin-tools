@@ -32,22 +32,60 @@ test('cursor adapter: never writes .claude-plugin or .codex-plugin manifests', (
   assert.equal(files.find(f => f.path === '.codex-plugin/plugin.json'), undefined);
 });
 
-test('cursor adapter: drops commands with warning (out of scope v1)', () => {
+test('cursor adapter: emits commands as commands/<name>.md with frontmatter', () => {
   const a = new CursorAdapter();
-  const { files, warnings } = a.render(ir.normalize(specWithTarget()));
-  assert.equal(files.find(f => f.path.startsWith('commands/')), undefined);
-  assert.ok(warnings.some(w => /commands.*dropped/i.test(w)), 'commands drop warning expected');
+  const { files } = a.render(ir.normalize(specWithTarget()));
+  const c = files.find(f => f.path === 'commands/check.md');
+  assert.ok(c, 'commands/check.md must be emitted');
+  assert.match(c.content, /name: check/);
+  assert.match(c.content, /description:/);
 });
 
-test('cursor adapter: drops agents with warning', () => {
+test('cursor adapter: emits agents as agents/<name>.md with frontmatter', () => {
   const a = new CursorAdapter();
   const spec = ir.normalize({
     ...specWithTarget(),
-    agents: [{ name: 'reviewer-bot', description: 'reviewer agent' }],
+    agents: [{ name: 'reviewer-bot', description: 'reviewer agent for cursor target' }],
   });
-  const { files, warnings } = a.render(spec);
-  assert.equal(files.find(f => f.path.startsWith('agents/')), undefined);
-  assert.ok(warnings.some(w => /reviewer-bot.*dropped/i.test(w)), 'agent drop warning expected');
+  const { files } = a.render(spec);
+  const ag = files.find(f => f.path === 'agents/reviewer-bot.md');
+  assert.ok(ag, 'agents/reviewer-bot.md must be emitted');
+  assert.match(ag.content, /name: reviewer-bot/);
+});
+
+test('cursor adapter: emits rules as rules/<name>.mdc with .mdc frontmatter', () => {
+  const a = new CursorAdapter();
+  const spec = ir.normalize({
+    ...specWithTarget(),
+    rules: [{
+      name: 'prefer-const',
+      description: 'Prefer const over let for variables never reassigned',
+      alwaysApply: true,
+      globs: ['**/*.ts', '**/*.tsx'],
+      body: 'Always use const.',
+    }],
+  });
+  const { files } = a.render(spec);
+  const r = files.find(f => f.path === 'rules/prefer-const.mdc');
+  assert.ok(r, 'rules/prefer-const.mdc must be emitted');
+  assert.match(r.content, /description: Prefer const/);
+  assert.match(r.content, /alwaysApply: true/);
+  assert.match(r.content, /globs:/);
+});
+
+test('cursor adapter: manifest references rules/agents/commands paths when present', () => {
+  const a = new CursorAdapter();
+  const spec = ir.normalize({
+    ...specWithTarget(),
+    rules: [{ name: 'r1', description: 'rule one description here long enough' }],
+    agents: [{ name: 'a1', description: 'agent one' }],
+  });
+  const { files } = a.render(spec);
+  const m = JSON.parse(files.find(f => f.path === '.cursor-plugin/plugin.json').content);
+  assert.equal(m.rules, './rules/');
+  assert.equal(m.agents, './agents/');
+  assert.equal(m.commands, './commands/');
+  assert.equal(m.skills, './skills/');
 });
 
 test('cursor adapter: emits SKILL.md preserving security frontmatter', () => {
@@ -69,6 +107,58 @@ test('cursor adapter: hook event names rewritten to camelCase', () => {
   const obj = JSON.parse(h.content);
   assert.ok(obj.hooks.preToolUse, 'PreToolUse must be rewritten to preToolUse');
   assert.equal(obj.hooks.PreToolUse, undefined, 'PascalCase must not survive');
+});
+
+test('cursor adapter: hooks.json uses flat {event: [{command, matcher?}]} schema, not Claude nested wrapper', () => {
+  const a = new CursorAdapter();
+  const { files } = a.render(ir.normalize(specWithTarget()));
+  const h = files.find(f => f.path === 'hooks/hooks.json');
+  const obj = JSON.parse(h.content);
+  const entries = obj.hooks.preToolUse;
+  assert.ok(Array.isArray(entries), 'event value must be array');
+  for (const e of entries) {
+    assert.equal(typeof e.command, 'string', 'entry must carry .command directly');
+    assert.equal(e.type, undefined, 'cursor entries must NOT carry Claude-style {type: "command"} wrapper');
+    assert.equal(e.hooks, undefined, 'cursor entries must NOT carry Claude-style nested .hooks[] wrapper');
+  }
+});
+
+test('cursor adapter: maps Stop/UserPromptSubmit/SubagentStop/PreCompact to camelCase Cursor events', () => {
+  const a = new CursorAdapter();
+  const spec = ir.normalize({
+    ...specWithTarget(),
+    hooks: [
+      { event: 'Stop', command: 'scripts/stop.sh' },
+      { event: 'UserPromptSubmit', command: 'scripts/prompt.sh' },
+      { event: 'SubagentStop', command: 'scripts/subagent.sh' },
+      { event: 'PreCompact', command: 'scripts/precompact.sh' },
+    ],
+  });
+  const { files } = a.render(spec);
+  const obj = JSON.parse(files.find(f => f.path === 'hooks/hooks.json').content);
+  assert.ok(obj.hooks.stop);
+  assert.ok(obj.hooks.beforeSubmitPrompt);
+  assert.ok(obj.hooks.subagentStop);
+  assert.ok(obj.hooks.preCompact);
+});
+
+test('cursor adapter: workspaceOpen + new cursor-only events pass through verbatim', () => {
+  const a = new CursorAdapter();
+  const spec = ir.normalize({
+    ...specWithTarget(),
+    hooks: [
+      { event: 'workspaceOpen', command: 'scripts/ws.sh' },
+      { event: 'beforeMCPExecution', command: 'scripts/mcp-pre.sh' },
+      { event: 'afterAgentResponse', command: 'scripts/resp.sh' },
+      { event: 'beforeReadFile', command: 'scripts/read.sh' },
+    ],
+  });
+  const { files } = a.render(spec);
+  const obj = JSON.parse(files.find(f => f.path === 'hooks/hooks.json').content);
+  assert.ok(obj.hooks.workspaceOpen);
+  assert.ok(obj.hooks.beforeMCPExecution);
+  assert.ok(obj.hooks.afterAgentResponse);
+  assert.ok(obj.hooks.beforeReadFile);
 });
 
 test('cursor adapter: drops codex-only and claude-only hook events with warnings', () => {

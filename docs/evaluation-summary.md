@@ -1,10 +1,10 @@
 # Evaluation Summary
 
-Date: 2026-05-19
+Date: 2026-05-20
 
 This workspace was converted into a two-plugin management project and then evaluated with the local `plugin-eval` CLI from `plugins/plugin-eval`.
 
-Latest delta: `plugin-builder` extended with a Cursor target adapter (skills + hooks + mcp.json scope). UnifiedSpec `targets` enum accepts `cursor`. Test count 132 → 146 (14 new `adapter-cursor.test.js` cases). Both plugins remain 100/A, low risk.
+Latest delta: `plugin-builder` moved to the v0.8.1 patch with UnifiedSpec v1.1, fuller Cursor target output, target-aware marketplace publishing, and stricter marketplace validation. Test count is now 192 for `plugin-builder`; both plugins remain 100/A, low risk.
 
 ## Commands
 
@@ -38,4 +38,3 @@ node plugins/plugin-eval/scripts/plugin-eval.js analyze <skill-dir> --format jso
 - `plugin-eval` reports no required or recommended fixes for either plugin or any skill.
 - `plugins/plugin-eval` has an `excessive` deferred budget because the plugin package includes its own source code, references, fixtures, and tests. The current evaluator does not classify this as a fix because the trigger and invoke costs remain moderate and all skill-level budgets are good.
 - No improvement patches were required after evaluation because all improvement briefs returned empty `requiredFixes` and `recommendedFixes`.
-

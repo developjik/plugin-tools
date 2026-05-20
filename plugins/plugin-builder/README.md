@@ -19,16 +19,28 @@ codex plugin install plugin-builder
 /add-plugin <plugin-name>
 ```
 
-Cursor target scope (v1): emits `skills`, `hooks`, and `mcp.json` only. `agents`, `commands`, and Cursor `rules` are not emitted. Hook event names are normalised to Cursor camelCase (e.g. `PreToolUse` → `preToolUse`).
+Cursor target scope (v3, UnifiedSpec v1.1): emits `rules`, `skills`, `agents`, `commands`, `hooks`, and `mcp.json`. Hook event names are normalised to Cursor camelCase (e.g. `PreToolUse` → `preToolUse`). Command file extension and inline-vs-file emit are controlled by `spec.cursor.commandExtension` / `inlineHooks` / `inlineMcp`.
+
+## UnifiedSpec v1.1 (additive over v1.0)
+
+Common surface promotions: `mcpServers[].args/env/headers`, `agents[].disallowedTools/model`, `hooks[].type` (`command|http|mcp_tool|prompt|agent`) + `statusMessage`, top-level `keywords`.
+
+Target-namespace extensions:
+
+- `spec.claude.{lsp,monitors,bin,settings,userConfig,agentExtras}`
+- `spec.codex.{apps,features,interfaceMeta}`
+- `spec.cursor.{commandExtension,inlineHooks,inlineMcp,displayName,publisher,tags}`
+
+All v1.1 fields are optional. v1.0 specs continue to validate and emit byte-identical output. Adapters surface a cross-target warning whenever the user enables a namespace field that the other selected targets cannot honor — the interactive `/plugin-builder:new` flow uses `skills/plugin-builder/references/capability-matrix.md` as the canonical lookup.
 
 User-facing commands:
 
 | Command | Purpose |
 |---|---|
-| `/plugin-builder:new [name]` | Create a Claude Code + Codex plugin and register it in a marketplace root |
-| `/plugin-builder:marketplace-init <root>` | Create Claude and Codex marketplace catalogs |
+| `/plugin-builder:new [name]` | Create a Claude Code, Codex, and Cursor plugin and register it in a marketplace root |
+| `/plugin-builder:marketplace-init <root>` | Create Claude, Codex, and (optional) Cursor marketplace catalogs |
 | `/plugin-builder:validate <plugin-dir>` | Run the 6-stage validator |
-| `/plugin-builder:publish <plugin-dir>` | Patch both marketplace catalogs at the parent root |
+| `/plugin-builder:publish <plugin-dir>` | Patch every selected marketplace catalog (Claude, Codex, and Cursor when present) at the parent root |
 
 Generated plugins use the v0.7 root-flat layout: `<root>/<plugin-name>/`.
 
@@ -47,15 +59,9 @@ Current structural gate:
 
 ```bash
 npm test
-node /Users/developjik/.codex/plugins/cache/openai-curated/plugin-eval/eed16198/scripts/plugin-eval.js analyze . --format markdown
+plugin-eval analyze . --format markdown
 ```
 
-Expected current result:
-
-- Tests: 146/146 pass
-- Plugin Eval: 100/100, Grade A, low risk
-- Skills: all four bundled skills score 100/100
-
-Measured usage is tracked separately. Keep observed usage JSONL out of the durable baseline until at least 5 representative successful benchmark samples exist; see `.plugin-eval/MEASUREMENT.md`.
+Target: tests green, Plugin Eval grade A with no failing checks across the plugin and every bundled skill. Measured usage is tracked separately — keep observed usage JSONL out of the durable baseline until at least 5 representative successful benchmark samples exist; see `.plugin-eval/MEASUREMENT.md`.
 
 Full archived docs are under `build/docs/`.

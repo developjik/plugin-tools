@@ -8,31 +8,29 @@ const dryRun = require('./dry-run.js');
 
 const STAGES = ['a', 'b', 'c', 'd', 'e', 'f'];
 
+const NATIVE_MANIFESTS = Object.freeze([
+  { target: 'claude-code', rel: path.join('.claude-plugin', 'plugin.json') },
+  { target: 'codex', rel: path.join('.codex-plugin', 'plugin.json') },
+  { target: 'cursor', rel: path.join('.cursor-plugin', 'plugin.json') },
+]);
+
 function runAll(pluginDir, opts = {}) {
   const strict = opts.strict === true;
   const results = [];
 
-  // Validator should work on either a single-target dir or a merged dir.
-  // Try both manifest locations; pick whichever exists.
-  const claudeManifest = path.join(pluginDir, '.claude-plugin', 'plugin.json');
-  const codexManifest = path.join(pluginDir, '.codex-plugin', 'plugin.json');
-  const manifestPath = fs.existsSync(claudeManifest) ? claudeManifest
-    : fs.existsSync(codexManifest) ? codexManifest
-      : claudeManifest;
-
   let spec = null;
   if (opts.spec) {
     spec = opts.spec;
-  } else if (fs.existsSync(manifestPath)) {
+  } else {
     try {
-      spec = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      spec = inferSpecFromPluginDir(pluginDir);
     } catch (e) {
       return {
         ok: false,
         strict,
         failed: 1,
         skipped: 0,
-        results: [{ stage: 'a', name: 'Manifest schema', status: 'FAIL', reason: `${manifestPath}: invalid JSON — ${e.message}` }],
+        results: [{ stage: 'a', name: 'Manifest schema', status: 'FAIL', reason: e.message }],
       };
     }
   }
@@ -42,7 +40,7 @@ function runAll(pluginDir, opts = {}) {
   results.push(stageC(pluginDir, opts.spec));
   results.push(stageD(pluginDir, opts.spec));
   results.push(stageE(pluginDir, opts.spec));
-  results.push(stageF(pluginDir));
+  results.push(stageF(pluginDir, spec));
 
   const failed = results.filter(r => r.status === 'FAIL');
   const skipped = results.filter(r => r.status === 'SKIP');
@@ -50,6 +48,31 @@ function runAll(pluginDir, opts = {}) {
   if (strict && skipped.length) ok = false;
 
   return { ok, results, strict, failed: failed.length, skipped: skipped.length };
+}
+
+function inferSpecFromPluginDir(pluginDir) {
+  const found = [];
+  for (const m of NATIVE_MANIFESTS) {
+    const file = path.join(pluginDir, m.rel);
+    if (!fs.existsSync(file)) continue;
+    let data;
+    try {
+      data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch (e) {
+      throw new Error(`${file}: invalid JSON — ${e.message}`);
+    }
+    found.push({ target: m.target, data });
+  }
+  if (!found.length) return null;
+
+  const spec = { ...found[0].data };
+  for (const { data } of found.slice(1)) {
+    for (const key of ['name', 'version', 'description', 'author', 'license', 'category', 'homepage', 'repository', 'keywords']) {
+      if (spec[key] == null && data[key] != null) spec[key] = data[key];
+    }
+  }
+  spec.targets = found.map(x => x.target);
+  return spec;
 }
 
 const SAFE_NAME = /^[a-z][a-z0-9-]*[a-z0-9]$/;
@@ -139,22 +162,34 @@ function stageE(pluginDir, spec) {
   return { stage: 'e', name: 'Codex dry-run', status: r.status, reason: r.reason };
 }
 
-function stageF(pluginDir) {
+function stageF(pluginDir, spec) {
   const marketplaceRoot = findMarketplaceRoot(pluginDir);
   if (!marketplaceRoot) return { stage: 'f', name: 'Marketplace', status: 'SKIP', reason: 'no marketplace.json' };
 
-  const claudeMp = path.join(marketplaceRoot, '.claude-plugin', 'marketplace.json');
-  const codexMp = path.join(marketplaceRoot, '.agents', 'plugins', 'marketplace.json');
-  const cursorMp = path.join(marketplaceRoot, '.cursor-plugin', 'marketplace.json');
+  const catalogs = [
+    { target: 'claude-code', label: 'Claude', mp: path.join(marketplaceRoot, '.claude-plugin', 'marketplace.json'), validate: validateClaudeMarketplace },
+    { target: 'codex', label: 'Codex', mp: path.join(marketplaceRoot, '.agents', 'plugins', 'marketplace.json'), validate: validateCodexMarketplace },
+    { target: 'cursor', label: 'Cursor', mp: path.join(marketplaceRoot, '.cursor-plugin', 'marketplace.json'), validate: validateCursorMarketplace },
+  ];
+  const requiredTargets = spec && Array.isArray(spec.targets) ? new Set(spec.targets) : null;
   const paths = [];
-  if (fs.existsSync(claudeMp)) paths.push(['Claude', claudeMp, validateClaudeMarketplace]);
-  if (fs.existsSync(codexMp)) paths.push(['Codex', codexMp, validateCodexMarketplace]);
-  if (fs.existsSync(cursorMp)) paths.push(['Cursor', cursorMp, validateCursorMarketplace]);
-  if (paths.length === 0) return { stage: 'f', name: 'Marketplace', status: 'SKIP', reason: 'no marketplace.json' };
-
   const errors = [];
-  for (const [label, mp, validate] of paths) {
-    const err = validate(mp);
+  for (const c of catalogs) {
+    const required = requiredTargets ? requiredTargets.has(c.target) : false;
+    const exists = fs.existsSync(c.mp);
+    if (required && !exists) {
+      errors.push(`${c.label}: missing marketplace catalog at ${c.mp}`);
+    }
+    if (exists) {
+      paths.push([c.label, c.mp, c.validate, required ? spec.name : null]);
+    }
+  }
+  if (paths.length === 0 && errors.length === 0) {
+    return { stage: 'f', name: 'Marketplace', status: 'SKIP', reason: 'no marketplace.json' };
+  }
+
+  for (const [label, mp, validate, expectedName] of paths) {
+    const err = validate(mp, expectedName);
     if (err) errors.push(`${label}: ${err}`);
   }
   if (errors.length) return { stage: 'f', name: 'Marketplace', status: 'FAIL', reason: errors.join('; ') };
@@ -185,7 +220,7 @@ function readMarketplace(mp) {
   return { data };
 }
 
-function validateClaudeMarketplace(mp) {
+function validateClaudeMarketplace(mp, expectedName = null) {
   const r = readMarketplace(mp);
   if (r.error) return r.error;
   const data = r.data;
@@ -199,10 +234,11 @@ function validateClaudeMarketplace(mp) {
     seen.add(p.name);
     if (!p.source && !p.path) return `plugin ${p.name}: source or path required`;
   }
+  if (expectedName && !seen.has(expectedName)) return `plugin entry missing: ${expectedName}`;
   return null;
 }
 
-function validateCursorMarketplace(mp) {
+function validateCursorMarketplace(mp, expectedName = null) {
   const r = readMarketplace(mp);
   if (r.error) return r.error;
   const data = r.data;
@@ -216,10 +252,11 @@ function validateCursorMarketplace(mp) {
     seen.add(p.name);
     if (!p.source && !p.path) return `plugin ${p.name}: source or path required`;
   }
+  if (expectedName && !seen.has(expectedName)) return `plugin entry missing: ${expectedName}`;
   return null;
 }
 
-function validateCodexMarketplace(mp) {
+function validateCodexMarketplace(mp, expectedName = null) {
   const r = readMarketplace(mp);
   if (r.error) return r.error;
   const data = r.data;
@@ -241,6 +278,7 @@ function validateCodexMarketplace(mp) {
       return `plugin ${p.name}: source.repo required`;
     }
   }
+  if (expectedName && !seen.has(expectedName)) return `plugin entry missing: ${expectedName}`;
   return null;
 }
 

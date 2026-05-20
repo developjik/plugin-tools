@@ -4,7 +4,7 @@
 >
 > English version: [README.md](./README.md)
 
-버전: 0.8.0 | 라이선스: MIT | Node: >=20 | npm 의존성 0
+버전: 0.8.1 | 라이선스: MIT | Node: >=20 | npm 의존성 0
 
 ---
 

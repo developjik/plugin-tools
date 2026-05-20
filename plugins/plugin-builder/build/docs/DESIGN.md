@@ -1,7 +1,35 @@
-# Plugin Builder — Design Document (v0.7 — root-flat marketplace, 2026-05-19)
+# Plugin Builder — Design Document (v0.8 — UnifiedSpec v1.1, 2026-05-20)
 
 > Korean version: [DESIGN.ko.md](./DESIGN.ko.md)
 
+> **v0.8 build notes — UnifiedSpec v1.1 (additive, backward-compatible)**:
+>
+> - `specVersion` now accepts `"1.0"` or `"1.1"`. All v1.0 specs continue to validate and emit byte-identical output (regression-protected by the existing self-host snapshot tests).
+> - **Common surface promotions** (1st-class on every target):
+>   - `McpSpec.args` / `env` / `headers` — emitted to `.mcp.json` (Claude/Codex) and `mcp.json` (Cursor). Previously only Cursor implemented these.
+>   - `AgentSpec.disallowedTools` / `model` — lifted onto Claude and Cursor agent frontmatter.
+>   - `HookSpec.type` (`command|http|mcp_tool|prompt|agent`) + `statusMessage` — Claude/Codex hook wrapper carries the right inner field per type.
+>   - `spec.keywords` — promoted to top-level metadata for Claude and Codex manifests.
+> - **Target-namespace extensions** (additive, silent-drop on other targets, warn surfaced in adapter output):
+>   - `spec.claude.lsp[]` → `.lsp.json` + manifest `lspServers` pointer.
+>   - `spec.claude.monitors[]` → `monitors/monitors.json` + manifest `monitors` pointer.
+>   - `spec.claude.bin[]` → `bin/<path>` files (path-traversal blocked at validate time).
+>   - `spec.claude.settings` → `settings.json` (only `agent` / `subagentStatusLine` keys honored).
+>   - `spec.claude.userConfig` → manifest `userConfig` block (typed: `string|number|boolean|directory|file`).
+>   - `spec.claude.agentExtras` → frontmatter overlay onto `agents[name]`. Allowed keys: `effort`, `maxTurns`, `skills`, `memory`, `background`, `isolation:"worktree"`, `disallowedTools`. **Privilege widening guard**: `disallowedTools ∩ agents[name].tools` must be empty (hard validation error).
+>   - `spec.codex.apps[]` → `.app.json` + manifest `apps` pointer (Codex Apps connectors).
+>   - `spec.codex.features.*` → manifest `features.*` merge (snake_case enforced via warning).
+>   - `spec.codex.interfaceMeta` → manifest `interface.{shortDescription,longDescription,developerName,websiteURL,privacyPolicyURL,termsOfServiceURL}`. URL fields pass the `URI_SCHEMES` allowlist.
+>   - `spec.cursor.commandExtension` (`md|mdc|markdown|txt`) — controls `commands/<name>.<ext>`.
+>   - `spec.cursor.inlineHooks` / `inlineMcp` — embed hooks/mcp into manifest, suppress separate files.
+>   - `spec.cursor.displayName` / `publisher` / `tags` — promoted manifest fields.
+> - **Cross-target warning policy**: every adapter scans for foreign-namespace data (`spec.claude.*` on the Codex/Cursor emit, etc.) and emits a `<namespace>.<field> is <X>-only; dropped from <this>-target` warning. Authors targeting multiple platforms see exactly which feature their build will not carry.
+> - **Cursor marketplace catalog**: `cursorEntry` no longer emits `version` (not in the official marketplace schema; strict validators reject it). The plugin's `.cursor-plugin/plugin.json` still carries `version`.
+> - **Interactive `/plugin-builder:new` flow**: `commands/new.md` + `skills/plugin-builder/SKILL.md` now mandate an `AskUserQuestion` multi-select for `targets` as the **first** prompt, then route every later question through a target-aware filter so the user never sees fields that the chosen platforms drop. Capability lookup table lives in `skills/plugin-builder/references/capability-matrix.md`.
+> - Current quality gate: 189/189 tests PASS, all v1.0 fixture byte-output preserved.
+>
+> The v0.7 notes below are retained for historical context:
+>
 > **v0.7 build notes** (breaking layout change):
 > - Plugin trees move from `<root>/plugins/<name>/` to `<root>/<name>/`. The `plugins/` intermediate folder is gone everywhere — file system, `marketplace.json` `path` / `source.path` fields, and the `metadata.pluginRoot` field (removed).
 > - **Single mode only**: the `SCAFFOLD_MODES` descriptor and the split/split-out/merged variants are removed; scaffolding always renders the hybrid layout. The `--merge`, `--allow-overlap`, `--split-out`, `--marketplace-root`, `--marketplace`, and `--local-path` flags are removed.

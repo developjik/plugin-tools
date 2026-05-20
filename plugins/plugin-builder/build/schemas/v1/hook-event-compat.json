@@ -1,15 +1,40 @@
 {
   "$id": "https://plugin-builder/schemas/v1/hook-event-compat.json",
-  "description": "Declarative hook event target compatibility. Validator reads this; adapters MUST NOT hardcode.",
+  "description": "Declarative hook event target compatibility. Validator reads this; adapters MUST NOT hardcode. Cursor event names match cursor.com/docs/plugins reference.",
   "common": ["PreToolUse", "PostToolUse", "Stop", "SessionStart", "UserPromptSubmit"],
   "claudeOnly": ["Notification", "SubagentStop", "PreCompact", "SessionEnd"],
   "codexOnly": ["PermissionRequest"],
-  "cursorSupported": ["PreToolUse", "PostToolUse", "SessionStart", "SessionEnd", "afterFileEdit", "beforeTabFileRead", "beforeShellExecution", "afterShellExecution"],
-  "cursorOnly": ["afterFileEdit", "beforeTabFileRead", "beforeShellExecution", "afterShellExecution"],
+  "cursorSupported": [
+    "PreToolUse", "PostToolUse", "SessionStart", "SessionEnd", "Stop", "UserPromptSubmit", "SubagentStop", "PreCompact",
+    "postToolUseFailure",
+    "subagentStart",
+    "beforeShellExecution", "afterShellExecution",
+    "beforeMCPExecution", "afterMCPExecution",
+    "beforeReadFile", "afterFileEdit",
+    "beforeSubmitPrompt",
+    "afterAgentResponse", "afterAgentThought",
+    "beforeTabFileRead", "afterTabFileEdit",
+    "workspaceOpen"
+  ],
+  "cursorOnly": [
+    "postToolUseFailure",
+    "subagentStart",
+    "beforeShellExecution", "afterShellExecution",
+    "beforeMCPExecution", "afterMCPExecution",
+    "beforeReadFile", "afterFileEdit",
+    "beforeSubmitPrompt",
+    "afterAgentResponse", "afterAgentThought",
+    "beforeTabFileRead", "afterTabFileEdit",
+    "workspaceOpen"
+  ],
   "claudeToCursor": {
     "PreToolUse": "preToolUse",
     "PostToolUse": "postToolUse",
     "SessionStart": "sessionStart",
-    "SessionEnd": "sessionEnd"
+    "SessionEnd": "sessionEnd",
+    "Stop": "stop",
+    "UserPromptSubmit": "beforeSubmitPrompt",
+    "SubagentStop": "subagentStop",
+    "PreCompact": "preCompact"
   }
 }

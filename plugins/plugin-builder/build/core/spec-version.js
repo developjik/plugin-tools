@@ -1,7 +1,7 @@
 'use strict';
 
-const SUPPORTED = ['1.0'];
-const CURRENT = '1.0';
+const SUPPORTED = ['1.0', '1.1'];
+const CURRENT = '1.1';
 
 function check(spec) {
   if (!spec || typeof spec !== 'object') {

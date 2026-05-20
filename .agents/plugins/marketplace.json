@@ -10,7 +10,7 @@
         "source": "local",
         "path": "./plugins/plugin-builder"
       },
-      "version": "0.8.0",
+      "version": "0.8.1",
       "description": "Scaffold Claude Code, OpenAI Codex, and Cursor plugins from a single UnifiedSpec.",
       "author": {
         "name": "developjik",

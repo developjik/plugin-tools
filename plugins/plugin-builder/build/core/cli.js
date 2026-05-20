@@ -25,6 +25,34 @@ function readJson(file) {
   }
 }
 
+const NATIVE_MANIFESTS = Object.freeze([
+  { target: 'claude-code', rel: path.join('.claude-plugin', 'plugin.json') },
+  { target: 'codex', rel: path.join('.codex-plugin', 'plugin.json') },
+  { target: 'cursor', rel: path.join('.cursor-plugin', 'plugin.json') },
+]);
+
+function inferSpecFromPluginDir(dir) {
+  const found = [];
+  for (const m of NATIVE_MANIFESTS) {
+    const file = path.join(dir, m.rel);
+    if (fs.existsSync(file)) {
+      found.push({ target: m.target, data: readJson(file) });
+    }
+  }
+  if (!found.length) {
+    throw new Error('plugin-dir has no supported plugin manifest');
+  }
+
+  const spec = { ...found[0].data };
+  for (const { data } of found.slice(1)) {
+    for (const key of ['name', 'version', 'description', 'author', 'license', 'category', 'homepage', 'repository', 'keywords']) {
+      if (spec[key] == null && data[key] != null) spec[key] = data[key];
+    }
+  }
+  spec.targets = found.map(x => x.target);
+  return spec;
+}
+
 const USAGE = `plugin-builder <command> [options]
 
 Commands:
@@ -356,15 +384,17 @@ function formatReport(out) {
 async function cmdPublish(args) {
   const dir = args._[1];
   if (!dir) throw new Error('plugin-dir required');
-  const manifestPath = path.join(dir, '.claude-plugin', 'plugin.json');
-  if (!fs.existsSync(manifestPath)) throw new Error('plugin-dir has no .claude-plugin/plugin.json');
-  const spec = readJson(manifestPath);
+  const spec = inferSpecFromPluginDir(dir);
 
   const absDir = path.resolve(dir);
   const absRoot = path.dirname(absDir);
-  const claudeCatalog = path.join(absRoot, marketplaceWriter.CLAUDE_MARKETPLACE_REL);
-  if (!fs.existsSync(claudeCatalog)) {
-    throw new Error(`marketplace catalog not found at ${claudeCatalog}; run 'plugin-builder marketplace init ${absRoot}' first`);
+  const hasMarketplaceRoot = [
+    marketplaceWriter.CLAUDE_MARKETPLACE_REL,
+    marketplaceWriter.CODEX_MARKETPLACE_REL,
+    marketplaceWriter.CURSOR_MARKETPLACE_REL,
+  ].some(rel => fs.existsSync(path.join(absRoot, rel)));
+  if (!hasMarketplaceRoot) {
+    throw new Error(`marketplace catalog not found under ${absRoot}; run 'plugin-builder marketplace init ${absRoot}' first`);
   }
 
   const result = await marketplaceWriter.patchMarketplaceRoot(absRoot, spec, {
