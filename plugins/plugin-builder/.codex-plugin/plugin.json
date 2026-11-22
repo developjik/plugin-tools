@@ -2,7 +2,7 @@
   "name": "plugin-builder",
   "version": "0.8.1",
   "description": "Scaffold Claude Code, OpenAI Codex, and Cursor plugins from a single UnifiedSpec.",
-  "author": { "name": "developjik", "email": "developjik@colosseum.kr" },
+  "author": { "name": "developjik", "email": "developjik@gmail.com" },
   "license": "MIT",
   "category": "dev-tools",
   "keywords": ["plugin-builder", "codex", "claude-code", "cursor", "scaffold", "marketplace"],

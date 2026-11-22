@@ -16,7 +16,7 @@ test('v0.6 self-host: plugin-builder becomes 1-plugin entry under marketplace ro
 
   const init = spawnSync('node', [BIN, 'marketplace', 'init', root,
     '--owner-name', 'developjik',
-    '--owner-email', 'developjik@colosseum.kr',
+    '--owner-email', 'developjik@example.com',
     '--display-name', 'Plugin Builder Official'], { encoding: 'utf8' });
   assert.equal(init.status, 0, init.stderr);
 

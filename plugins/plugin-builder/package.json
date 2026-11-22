@@ -14,7 +14,7 @@
     "lint": "node --check bin/plugin-builder && find build/core build/adapters -name '*.js' -exec node --check {} \\;"
   },
   "license": "MIT",
-  "author": "developjik <developjik@colosseum.kr>",
+  "author": "developjik <developjik@gmail.com>",
   "dependencies": {},
   "devDependencies": {}
 }

@@ -1,6 +1,6 @@
 {
   "name": "plugin-builder-official",
-  "owner": { "name": "developjik", "email": "developjik@colosseum.kr" },
+  "owner": { "name": "developjik", "email": "developjik@gmail.com" },
   "metadata": {
     "description": "Marketplace for the Plugin Builder multi-target plugin scaffold."
   },
