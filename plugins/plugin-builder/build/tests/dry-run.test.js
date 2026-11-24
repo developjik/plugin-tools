@@ -40,10 +40,8 @@ test('dry-run.runClaude: missing manifest → FAIL not SKIP (no false PASS)', ()
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pb-dryrun-empty-'));
   try {
     const r = dryRun.runClaude(dir);
-    // If claude CLI is missing this returns SKIP; if claude exists the manifest
-    // load must fail loudly, never silently PASS.
-    assert.ok(['SKIP', 'FAIL'].includes(r.status), `expected SKIP|FAIL got ${r.status}`);
-    if (r.status === 'FAIL') assert.match(r.reason, /missing|invalid/);
+    assert.equal(r.status, 'FAIL');
+    assert.match(r.reason, /missing|invalid/);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
