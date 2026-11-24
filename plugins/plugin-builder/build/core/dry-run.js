@@ -137,14 +137,14 @@ function runDryRun(targetName, pluginDir) {
   const desc = TARGETS[targetName];
   if (!desc) return fail(`unknown dry-run target: ${targetName}`);
 
-  if (!commandExists(desc.cli)) return skip(`${desc.cli} CLI not installed`);
-
   const manifestPath = path.join(pluginDir, desc.manifestSubdir, 'plugin.json');
   const manifest = readJsonSafe(manifestPath);
   if (!manifest) return fail(`${desc.manifestSubdir}/plugin.json missing or invalid`);
   const name = manifest.name;
   if (!name || typeof name !== 'string') return fail(`${desc.manifestSubdir}/plugin.json name missing`);
   if (!SAFE_NAME.test(name)) return fail(`plugin name unsafe (expected kebab-case): ${name}`);
+
+  if (!commandExists(desc.cli)) return skip(`${desc.cli} CLI not installed`);
 
   const tmp = mkTmp(desc.tmpPrefix);
   try {
