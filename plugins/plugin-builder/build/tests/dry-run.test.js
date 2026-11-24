@@ -84,3 +84,5 @@ test('dry-run rejects symlinks in plugin tree (no secret exfiltration)', () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('DEV41 deliberate failing test probe', () => assert.fail('expected negative CI probe'));
